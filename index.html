@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Northgo（northgo.com）HTML 網站地圖 v1.0.0。依 2026-11-24 實地爬取的可連頁面整理，符合 RWD。">
+  <meta name="version" content="1.0.0">
+  <title>Northgo 網站地圖</title>
+  <style>
+    :root {
+      --navy: #0a1b33;
+      --navy-2: #13264b;
+      --cyan: #00e5e5;
+      --ink: #0a1b33;
+      --muted: #5a6b80;
+      --line: #e3ebf3;
+      --card: #ffffff;
+      --bg: #f3f7fb;
+      --warn: #8a4b12;
+      --warn-bg: #fff4e8;
+      --ok: #0d6b4d;
+      --shadow: 0 10px 30px rgba(10, 27, 51, 0.06);
+      --radius: 16px;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    a { color: inherit; }
+    img { max-width: 100%; }
+
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: -40px;
+      background: var(--cyan);
+      color: var(--navy);
+      padding: 8px 12px;
+      z-index: 20;
+      border-radius: 8px;
+    }
+    .skip:focus { top: 12px; }
+
+    .hero {
+      background:
+        radial-gradient(1200px 400px at 90% -10%, rgba(0, 229, 229, 0.18), transparent 55%),
+        linear-gradient(160deg, #071426 0%, var(--navy) 55%, #123056 100%);
+      color: #fff;
+      padding: 28px 20px 36px;
+    }
+    .wrap { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .logo {
+      font-weight: 750;
+      letter-spacing: -0.04em;
+      font-size: 1.45rem;
+      text-decoration: none;
+    }
+    .logo span { color: var(--cyan); }
+    .hero-meta {
+      color: rgba(255,255,255,0.72);
+      font-size: 0.875rem;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      font-weight: 720;
+    }
+    h1 em {
+      font-style: normal;
+      color: var(--cyan);
+    }
+    .lede {
+      max-width: 42rem;
+      margin: 0;
+      color: rgba(255,255,255,0.86);
+      font-size: 1.05rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: -28px;
+      position: relative;
+      z-index: 1;
+    }
+    .stat {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      min-height: 92px;
+    }
+    .stat b {
+      display: block;
+      font-size: 1.55rem;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .stat span { color: var(--muted); font-size: 0.9rem; }
+
+    main { padding: 28px 0 64px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 28px 0 18px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tabs button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 999px;
+      min-height: 44px;
+      padding: 0 16px;
+      font: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tabs button[aria-pressed="true"] {
+      background: var(--navy);
+      color: #fff;
+      border-color: var(--navy);
+    }
+    .tabs button:focus-visible,
+    a:focus-visible,
+    .search:focus-visible {
+      outline: 3px solid var(--cyan);
+      outline-offset: 2px;
+    }
+    .search {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 16px;
+      font: inherit;
+      width: min(280px, 100%);
+      background: #fff;
+    }
+
+    .note {
+      background: var(--warn-bg);
+      color: var(--warn);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+      font-size: 0.95rem;
+    }
+    .note a { color: var(--warn); }
+
+    section { margin-bottom: 34px; }
+    section h2 {
+      margin: 0 0 12px;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 18px 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .card header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .card h3 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+    .card h3 a {
+      text-decoration: none;
+    }
+    .card h3 a:hover { color: #087c86; }
+    .badge {
+      flex: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #e7fbfb;
+      color: #08696c;
+    }
+    .badge.warn { background: var(--warn-bg); color: var(--warn); }
+    .path {
+      font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      font-size: 0.82rem;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .card p { margin: 0; color: #24364d; font-size: 0.95rem; }
+    .card ul {
+      margin: 4px 0 0;
+      padding-left: 1.1rem;
+      color: #24364d;
+      font-size: 0.92rem;
+    }
+    .card li { margin: 2px 0; }
+    .card .go {
+      margin-top: auto;
+      padding-top: 8px;
+      text-decoration: none;
+      color: #087c86;
+      font-weight: 650;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .hidden { display: none !important; }
+    .empty {
+      display: none;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px dashed var(--line);
+    }
+    .empty.show { display: block; }
+
+    footer {
+      background: var(--navy);
+      color: rgba(255,255,255,0.78);
+      padding: 28px 0 36px;
+      font-size: 0.9rem;
+    }
+    footer a { color: var(--cyan); }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: space-between; }
+
+    @media (max-width: 800px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .toolbar { align-items: stretch; }
+      .search { width: 100%; }
+    }
+    @media (max-width: 520px) {
+      .wrap { width: min(var(--max), calc(100% - 24px)); }
+      .hero { padding-top: 18px; }
+      .stats { grid-template-columns: 1fr 1fr; margin-top: -18px; }
+      h1 { font-size: 2rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+    @media print {
+      .hero, footer, .toolbar, .skip { background: #fff; color: #000; }
+      .stat, .card { box-shadow: none; break-inside: avoid; }
+      .tabs, .search, .go { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#map">跳至網站地圖</a>
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand">
+        <a class="logo" href="https://www.northgo.com/">North<span>GO</span></a>
+        <div class="hero-meta">v1.0.0 · HTML 網站地圖 · 2026-11-24</div>
+      </div>
+      <h1>Making logistics <em>effortless.</em></h1>
+      <p class="lede">依 northgo.com 導覽、頁尾與各語系內部連結實地整理。這是給人閱讀的 HTML 網站地圖，手機與桌面皆可直接瀏覽。</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="stats" aria-label="網站概況">
+      <div class="stat"><b>44</b><span>可連頁面（4 種語系）</span></div>
+      <div class="stat"><b>4</b><span>核心物流服務</span></div>
+      <div class="stat"><b>7</b><span>全球辦公室</span></div>
+      <div class="stat"><b>無</b><span>公開 sitemap.xml</span></div>
+    </div>
+  </div>
+
+  <main id="map" class="wrap">
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="依語系篩選">
+        <button type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" data-filter="en" aria-pressed="false">English</button>
+        <button type="button" data-filter="zh-tw" aria-pressed="false">繁體中文</button>
+        <button type="button" data-filter="ja" aria-pressed="false">日本語</button>
+        <button type="button" data-filter="vi" aria-pressed="false">Tiếng Việt</button>
+      </div>
+      <input class="search" type="search" placeholder="搜尋頁面或路徑" aria-label="搜尋頁面或路徑">
+    </div>
+
+    <p class="note">頁尾有連結的 <a href="https://www.northgo.com/news">/news</a>（以及各語系的 news）目前回傳 404，未列入可連頁面。社群圖示連結指向首頁錨點，沒有獨立網址。</p>
+
+    <section aria-labelledby="core-title">
+      <h2 id="core-title">主要頁面</h2>
+      <div class="grid" data-group>
+        <article class="card" data-lang="en" data-text="home english making logistics effortless">
+          <header><h3><a href="https://www.northgo.com/">首頁</a></h3><span class="badge">EN</span></header>
+          <div class="path">/</div>
+          <p>主標「Making logistics effortless.」。超過 30 年物流經驗，強調把供應鏈變簡單。頁內有 Why Northgo 與四大服務入口。</p>
+          <ul>
+            <li><a href="https://www.northgo.com/#why-northgo">Why Northgo</a></li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="首頁 繁體中文 讓物流變得輕鬆">
+          <header><h3><a href="https://www.northgo.com/zh-tw">首頁</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw</div>
+          <p>繁體中文首頁，主標為「讓物流變得輕鬆。」結構與英文版相同。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="home japanese 日本語">
+          <header><h3><a href="https://www.northgo.com/ja">首頁</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja</div>
+          <p>日文語系入口。路徑前綴為 /ja，服務、關於、聯絡與法律頁皆有對應網址。</p>
+          <a class="go" href="https://www.northgo.com/ja">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="home vietnamese tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi">首頁</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi</div>
+          <p>越南文語系入口。路徑前綴為 /vi，頁面結構與英文版對應。</p>
+          <a class="go" href="https://www.northgo.com/vi">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="en" data-text="about welcome vision mission values story">
+          <header><h3><a href="https://www.northgo.com/about">關於我們</a></h3><span class="badge">EN</span></header>
+          <div class="path">/about</div>
+          <p>Welcome to Northgo。願景、使命、價值與品牌故事。</p>
+          <ul>
+            <li>Our Vision：成為最受信任的物流品牌</li>
+            <li>Our Mission：Making logistics effortless</li>
+            <li>價值：以客為本、誠信透明、創新卓越、永續責任</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/about">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="about 關於 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/about">關於我們</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/about</div>
+          <p>關於頁的繁中路徑。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/about">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="about 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/about">關於我們</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/about</div>
+          <p>關於頁的日文路徑。</p>
+          <a class="go" href="https://www.northgo.com/ja/about">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="about tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/about">關於我們</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/about</div>
+          <p>關於頁的越南文路徑。</p>
+          <a class="go" href="https://www.northgo.com/vi/about">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="en" data-text="contact enquiry offices taipei taichung kaohsiung los angeles ho chi minh tokyo osaka">
+          <header><h3><a href="https://www.northgo.com/contact">聯絡我們</a></h3><span class="badge">EN</span></header>
+          <div class="path">/contact</div>
+          <p>詢問表單與全球辦公室。頁尾 Locations 也指向此頁。</p>
+          <ul>
+            <li><a href="https://www.northgo.com/contact#enquiry-form">詢問表單</a></li>
+            <li>台北總部、台中、高雄</li>
+            <li>洛杉磯、胡志明市、東京、大阪</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/contact">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="contact 聯絡 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/contact">聯絡我們</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/contact</div>
+          <p>繁中聯絡頁，含詢問表單錨點。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/contact#enquiry-form">開啟表單 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="contact 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/contact">聯絡我們</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/contact</div>
+          <p>日文聯絡頁。</p>
+          <a class="go" href="https://www.northgo.com/ja/contact">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="contact tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/contact">聯絡我們</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/contact</div>
+          <p>越南文聯絡頁。</p>
+          <a class="go" href="https://www.northgo.com/vi/contact">開啟頁面 →</a>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="svc-title">
+      <h2 id="svc-title">服務</h2>
+      <div class="grid" data-group>
+        <article class="card" data-lang="en" data-text="freight logistics ocean air land customs fcl lcl">
+          <header><h3><a href="https://www.northgo.com/services/freight-logistics">貨運物流</a></h3><span class="badge">EN</span></header>
+          <div class="path">/services/freight-logistics</div>
+          <p>海、空、陸與報關的端到端貨運。含 FCL、LCL 與承運安排。</p>
+          <ul>
+            <li>Ocean Freight</li>
+            <li>Air Freight</li>
+            <li>Land Transport</li>
+            <li>Customs Clearance</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/services/freight-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="freight 貨運 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/services/freight-logistics">貨運物流</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/services/freight-logistics</div>
+          <p>貨運物流的繁中路徑。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/services/freight-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="freight 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/services/freight-logistics">貨運物流</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/services/freight-logistics</div>
+          <p>貨運物流的日文路徑。</p>
+          <a class="go" href="https://www.northgo.com/ja/services/freight-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="freight tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/services/freight-logistics">貨運物流</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/services/freight-logistics</div>
+          <p>貨運物流的越南文路徑。</p>
+          <a class="go" href="https://www.northgo.com/vi/services/freight-logistics">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="project logistics heavy oil gas offshore energy mining">
+          <header><h3><a href="https://www.northgo.com/services/project-logistics">專案物流</a></h3><span class="badge">EN</span></header>
+          <div class="path">/services/project-logistics</div>
+          <p>超大、超重與高價值貨物的門到門專案運輸，含工程方案與專案管理。</p>
+          <ul>
+            <li>油氣、離岸海事、基礎建設、能源</li>
+            <li>軌道、再生能源、礦業、工程營建、工業</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/services/project-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="project 專案 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/services/project-logistics">專案物流</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/services/project-logistics</div>
+          <p>專案物流的繁中路徑。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/services/project-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="project 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/services/project-logistics">專案物流</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/services/project-logistics</div>
+          <p>專案物流的日文路徑。</p>
+          <a class="go" href="https://www.northgo.com/ja/services/project-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="project tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/services/project-logistics">專案物流</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/services/project-logistics</div>
+          <p>專案物流的越南文路徑。</p>
+          <a class="go" href="https://www.northgo.com/vi/services/project-logistics">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="warehouse logistics taichung port wms storage">
+          <header><h3><a href="https://www.northgo.com/services/warehouse-logistics">倉儲物流</a></h3><span class="badge">EN</span></header>
+          <div class="path">/services/warehouse-logistics</div>
+          <p>台中港據點的倉儲，含彈性儲位、WMS 庫存與加值服務，並涵蓋離岸物流。</p>
+          <ul>
+            <li>據點設施</li>
+            <li>彈性儲存</li>
+            <li>庫存管理</li>
+            <li>加值服務</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/services/warehouse-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="warehouse 倉儲 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/services/warehouse-logistics">倉儲物流</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/services/warehouse-logistics</div>
+          <p>倉儲物流的繁中路徑。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/services/warehouse-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="warehouse 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/services/warehouse-logistics">倉儲物流</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/services/warehouse-logistics</div>
+          <p>倉儲物流的日文路徑。</p>
+          <a class="go" href="https://www.northgo.com/ja/services/warehouse-logistics">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="warehouse tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/services/warehouse-logistics">倉儲物流</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/services/warehouse-logistics</div>
+          <p>倉儲物流的越南文路徑。</p>
+          <a class="go" href="https://www.northgo.com/vi/services/warehouse-logistics">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="shipping agency port dry bulk tanker cruise container">
+          <header><h3><a href="https://www.northgo.com/services/shipping-agency">船務代理</a></h3><span class="badge">EN</span></header>
+          <div class="path">/services/shipping-agency</div>
+          <p>港口代理與海事服務，協調港務、文件與船員，縮短靠港時間。</p>
+          <ul>
+            <li>乾散貨、油輪、雜貨、郵輪</li>
+            <li>離岸、特殊船、貨櫃船、汽車船</li>
+          </ul>
+          <a class="go" href="https://www.northgo.com/services/shipping-agency">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="shipping agency 船務 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/services/shipping-agency">船務代理</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/services/shipping-agency</div>
+          <p>船務代理的繁中路徑。</p>
+          <a class="go" href="https://www.northgo.com/zh-tw/services/shipping-agency">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="shipping agency 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/services/shipping-agency">船務代理</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/services/shipping-agency</div>
+          <p>船務代理的日文路徑。</p>
+          <a class="go" href="https://www.northgo.com/ja/services/shipping-agency">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="shipping agency tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/services/shipping-agency">船務代理</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/services/shipping-agency</div>
+          <p>船務代理的越南文路徑。</p>
+          <a class="go" href="https://www.northgo.com/vi/services/shipping-agency">開啟頁面 →</a>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="legal-title">
+      <h2 id="legal-title">法律文件</h2>
+      <div class="grid" data-group>
+        <article class="card" data-lang="en" data-text="privacy policy">
+          <header><h3><a href="https://www.northgo.com/legal/privacy-policy">隱私權政策</a></h3><span class="badge">EN</span></header>
+          <div class="path">/legal/privacy-policy</div>
+          <a class="go" href="https://www.northgo.com/legal/privacy-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="privacy 隱私 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/legal/privacy-policy">隱私權政策</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/legal/privacy-policy</div>
+          <a class="go" href="https://www.northgo.com/zh-tw/legal/privacy-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="privacy 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/legal/privacy-policy">隱私權政策</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/legal/privacy-policy</div>
+          <a class="go" href="https://www.northgo.com/ja/legal/privacy-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="privacy tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/legal/privacy-policy">隱私權政策</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/legal/privacy-policy</div>
+          <a class="go" href="https://www.northgo.com/vi/legal/privacy-policy">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="terms of service">
+          <header><h3><a href="https://www.northgo.com/legal/terms">服務條款</a></h3><span class="badge">EN</span></header>
+          <div class="path">/legal/terms</div>
+          <a class="go" href="https://www.northgo.com/legal/terms">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="terms 條款 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/legal/terms">服務條款</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/legal/terms</div>
+          <a class="go" href="https://www.northgo.com/zh-tw/legal/terms">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="terms 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/legal/terms">服務條款</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/legal/terms</div>
+          <a class="go" href="https://www.northgo.com/ja/legal/terms">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="terms tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/legal/terms">服務條款</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/legal/terms</div>
+          <a class="go" href="https://www.northgo.com/vi/legal/terms">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="cookie policy">
+          <header><h3><a href="https://www.northgo.com/legal/cookie-policy">Cookie 政策</a></h3><span class="badge">EN</span></header>
+          <div class="path">/legal/cookie-policy</div>
+          <a class="go" href="https://www.northgo.com/legal/cookie-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="cookie 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/legal/cookie-policy">Cookie 政策</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/legal/cookie-policy</div>
+          <a class="go" href="https://www.northgo.com/zh-tw/legal/cookie-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="cookie 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/legal/cookie-policy">Cookie 政策</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/legal/cookie-policy</div>
+          <a class="go" href="https://www.northgo.com/ja/legal/cookie-policy">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="cookie tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/legal/cookie-policy">Cookie 政策</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/legal/cookie-policy</div>
+          <a class="go" href="https://www.northgo.com/vi/legal/cookie-policy">開啟頁面 →</a>
+        </article>
+
+        <article class="card" data-lang="en" data-text="legal disclaimer">
+          <header><h3><a href="https://www.northgo.com/legal/disclaimer">法律聲明</a></h3><span class="badge">EN</span></header>
+          <div class="path">/legal/disclaimer</div>
+          <a class="go" href="https://www.northgo.com/legal/disclaimer">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="zh-tw" data-text="disclaimer 聲明 繁中">
+          <header><h3><a href="https://www.northgo.com/zh-tw/legal/disclaimer">法律聲明</a></h3><span class="badge">繁中</span></header>
+          <div class="path">/zh-tw/legal/disclaimer</div>
+          <a class="go" href="https://www.northgo.com/zh-tw/legal/disclaimer">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="ja" data-text="disclaimer 日本語">
+          <header><h3><a href="https://www.northgo.com/ja/legal/disclaimer">法律聲明</a></h3><span class="badge">JA</span></header>
+          <div class="path">/ja/legal/disclaimer</div>
+          <a class="go" href="https://www.northgo.com/ja/legal/disclaimer">開啟頁面 →</a>
+        </article>
+        <article class="card" data-lang="vi" data-text="disclaimer tiếng việt">
+          <header><h3><a href="https://www.northgo.com/vi/legal/disclaimer">法律聲明</a></h3><span class="badge">VI</span></header>
+          <div class="path">/vi/legal/disclaimer</div>
+          <a class="go" href="https://www.northgo.com/vi/legal/disclaimer">開啟頁面 →</a>
+        </article>
+      </div>
+    </section>
+
+    <p class="empty" id="empty">沒有符合的頁面。</p>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div>Northgo 網站地圖 v1.0.0 · 資料取自 <a href="https://www.northgo.com/">www.northgo.com</a></div>
+      <div>每種語系 11 個可連頁面。News 四個網址目前為 404。</div>
+    </div>
+  </footer>
+
+  <script>
+    const buttons = document.querySelectorAll(".tabs button");
+    const cards = document.querySelectorAll(".card");
+    const sections = document.querySelectorAll("main section");
+    const search = document.querySelector(".search");
+    const empty = document.getElementById("empty");
+    let lang = "all";
+
+    function apply() {
+      const q = search.value.trim().toLowerCase();
+      let shown = 0;
+      cards.forEach((card) => {
+        const okLang = lang === "all" || card.dataset.lang === lang;
+        const okText = !q || (card.dataset.text + " " + card.innerText).toLowerCase().includes(q);
+        const visible = okLang && okText;
+        card.classList.toggle("hidden", !visible);
+        if (visible) shown += 1;
+      });
+      sections.forEach((section) => {
+        const any = section.querySelector(".card:not(.hidden)");
+        section.classList.toggle("hidden", !any);
+      });
+      empty.classList.toggle("show", shown === 0);
+    }
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        lang = button.dataset.filter;
+        buttons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+        apply();
+      });
+    });
+    search.addEventListener("input", apply);
+  </script>
+</body>
+</html>
