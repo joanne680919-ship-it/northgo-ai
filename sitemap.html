@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Northgo（northgo.com）HTML 網站地圖 v1.0.1。依 2026-11-24 實地爬取的可連頁面整理，符合 RWD。">
-  <meta name="version" content="1.0.1">
+  <meta name="description" content="Northgo（northgo.com）HTML 網站地圖 v1.0.2。依 2026-11-24 實地爬取的可連頁面整理，符合 RWD。">
+  <meta name="version" content="1.0.2">
   <title>Northgo 網站地圖</title>
   <style>
     :root {
@@ -65,12 +65,28 @@
       margin-bottom: 28px;
     }
     .logo {
-      font-weight: 750;
-      letter-spacing: -0.04em;
-      font-size: 1.45rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      color: #fff;
       text-decoration: none;
     }
-    .logo span { color: var(--cyan); }
+    .logo-img {
+      display: block;
+      height: 34px;
+      width: auto;
+    }
+    .logo-version {
+      color: var(--navy);
+      background: var(--cyan);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      padding: 5px 8px;
+    }
     .hero-meta {
       color: rgba(255,255,255,0.72);
       font-size: 0.875rem;
@@ -278,6 +294,8 @@
     @media (max-width: 520px) {
       .wrap { width: min(var(--max), calc(100% - 24px)); }
       .hero { padding-top: 18px; }
+      .brand { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .logo-img { height: 30px; }
       .stats { grid-template-columns: 1fr 1fr; margin-top: -18px; }
       h1 { font-size: 2rem; }
     }
@@ -296,8 +314,11 @@
   <header class="hero">
     <div class="wrap">
       <div class="brand">
-        <a class="logo" href="https://www.northgo.com/">North<span>GO</span></a>
-        <div class="hero-meta">v1.0.1 · HTML 網站地圖 · 2026-11-24</div>
+        <a class="logo" href="https://www.northgo.com/">
+          <img class="logo-img" src="northgo-logo.png" alt="Northgo" width="324" height="63">
+          <span class="logo-version">v1.0.2</span>
+        </a>
+        <div class="hero-meta">HTML 網站地圖 · 2026-11-24</div>
       </div>
       <h1>Making logistics <em>effortless.</em></h1>
       <p class="lede">依 northgo.com 導覽、頁尾與各語系內部連結實地整理。這是給人閱讀的 HTML 網站地圖，手機與桌面皆可直接瀏覽。</p>
@@ -639,7 +660,7 @@
     <div class="wrap">
       <div>Northgo 網站地圖 · 資料取自 <a href="https://www.northgo.com/">www.northgo.com</a></div>
       <div>每種語系 11 個可連頁面。News 四個網址目前為 404。</div>
-      <div class="version">版本 <span id="site-version">1.0.1</span></div>
+      <div class="version">版本 <span id="site-version">1.0.2</span></div>
     </div>
   </footer>
 
