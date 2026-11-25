@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import json
+import re
 import sqlite3
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -11,15 +12,41 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "dev.db"
 SECRET = "northgo-dev-session-secret"
-VERSION = "0.1.0"
+VERSION = "0.1.2"
 STATUSES = {"new", "in_progress", "closed"}
+ROLES = {
+    "admin": {"name": "管理者", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},
+    "editor": {"name": "編輯者", "views": ["enquiries", "content", "media", "pages"]},
+}
+VIEW_KEYS = {"", "enquiries", "content", "media", "pages", "users", "menus"}
 
 
 def connect():
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     con.executescript((ROOT / "schema.sql").read_text(encoding="utf-8"))
+    columns = {row[1] for row in con.execute("PRAGMA table_info(users)")}
+    if "username" not in columns:
+        con.execute("ALTER TABLE users ADD COLUMN username TEXT")
+    if "last_login_at" not in columns:
+        con.execute("ALTER TABLE users ADD COLUMN last_login_at TEXT")
+    con.execute(
+        "UPDATE users SET username = lower(substr(email, 1, instr(email, '@') - 1)) WHERE username IS NULL OR username = ''"
+    )
+    try:
+        con.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_username ON users(username)")
+    except sqlite3.IntegrityError:
+        pass
+    con.commit()
     return con
+
+
+def allows(user, view_key):
+    return view_key in ROLES.get(user["role"], {}).get("views", [])
+
+
+def now():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def b64url(raw):
@@ -66,7 +93,31 @@ def verify_password(password, stored):
 
 
 def public_user(row):
-    return {"id": row["id"], "email": row["email"], "name": row["name"], "role": row["role"], "active": bool(row["active"]), "createdAt": row["created_at"]}
+    role = row["role"] if row["role"] in ROLES else "editor"
+    return {
+        "id": row["id"], "email": row["email"], "username": row["username"] or "", "name": row["name"],
+        "role": role, "roleName": ROLES[role]["name"], "permissions": ROLES[role]["views"],
+        "active": bool(row["active"]), "lastLoginAt": row["last_login_at"] or "", "createdAt": row["created_at"],
+    }
+
+
+def public_menu(row):
+    return {
+        "id": row["id"], "parentId": row["parent_id"], "label": row["label"], "viewKey": row["view_key"],
+        "sortOrder": row["sort_order"], "roles": [item for item in (row["roles"] or "").split(",") if item],
+        "active": bool(row["active"]),
+    }
+
+
+def user_fields(body):
+    email = str(body.get("email") or "").strip().lower()
+    name = str(body.get("name") or "").strip()
+    username = str(body.get("username") or "").strip().lower()
+    role = body.get("role") if body.get("role") in ROLES else "editor"
+    active = 1 if body.get("active", True) else 0
+    if "@" not in email or not name or not re.fullmatch(r"[a-z0-9._-]{2,32}", username):
+        return None
+    return email, username, name, role, active
 
 
 def public_enquiry(row):
@@ -166,12 +217,23 @@ class Handler(BaseHTTPRequestHandler):
         row = self.user()
         if not row:
             return self.end_json(401, {"error": "unauthorized"})
-        if path == "/api/enquiries":
-            return self.list_enquiries(parse_qs(url.query))
-        if path.startswith("/api/enquiries/"):
+        if not row["active"]:
+            return self.end_json(403, {"error": "inactive"})
+        if path == "/api/enquiries" or path.startswith("/api/enquiries/"):
+            if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
+            if path == "/api/enquiries":
+                return self.list_enquiries(parse_qs(url.query))
             return self.get_enquiry(int(path.rsplit("/", 1)[1]))
         if path == "/api/users":
-            return self.list_users()
+            if not allows(row, "users"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.list_users(parse_qs(url.query))
+        if path == "/api/menus":
+            manage = parse_qs(url.query).get("scope", [""])[0] == "manage"
+            if manage and not allows(row, "menus"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.list_menus(row, manage)
         return self.end_json(404, {"error": "not_found"})
 
     def do_POST(self):
@@ -184,10 +246,20 @@ class Handler(BaseHTTPRequestHandler):
         row = self.user()
         if not row:
             return self.end_json(401, {"error": "unauthorized"})
+        if not row["active"]:
+            return self.end_json(403, {"error": "inactive"})
         if path == "/api/enquiries":
+            if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.save_enquiry(body)
         if path == "/api/users":
+            if not allows(row, "users"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.create_user(body)
+        if path == "/api/menus":
+            if not allows(row, "menus"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.save_menu(0, body)
         return self.end_json(404, {"error": "not_found"})
 
     def do_PUT(self):
@@ -195,11 +267,25 @@ class Handler(BaseHTTPRequestHandler):
         row = self.user()
         if not row:
             return self.end_json(401, {"error": "unauthorized"})
+        if not row["active"]:
+            return self.end_json(403, {"error": "inactive"})
         body = self.read_body()
+        if path == "/api/me":
+            body["role"] = row["role"]
+            body["active"] = bool(row["active"])
+            return self.update_user(row["id"], body, row)
         if path.startswith("/api/enquiries/"):
+            if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.update_enquiry(int(path.rsplit("/", 1)[1]), body)
         if path.startswith("/api/users/"):
+            if not allows(row, "users"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.update_user(int(path.rsplit("/", 1)[1]), body, row)
+        if path.startswith("/api/menus/"):
+            if not allows(row, "menus"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.save_menu(int(path.rsplit("/", 1)[1]), body)
         return self.end_json(404, {"error": "not_found"})
 
     def do_DELETE(self):
@@ -207,19 +293,33 @@ class Handler(BaseHTTPRequestHandler):
         row = self.user()
         if not row:
             return self.end_json(401, {"error": "unauthorized"})
+        if not row["active"]:
+            return self.end_json(403, {"error": "inactive"})
         if path.startswith("/api/enquiries/"):
+            if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.delete_enquiry(int(path.rsplit("/", 1)[1]))
         if path.startswith("/api/users/"):
+            if not allows(row, "users"):
+                return self.end_json(403, {"error": "forbidden"})
             return self.delete_user(int(path.rsplit("/", 1)[1]), row)
+        if path.startswith("/api/menus/"):
+            if not allows(row, "menus"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.delete_menu(int(path.rsplit("/", 1)[1]))
         return self.end_json(404, {"error": "not_found"})
 
     def login(self, body):
         email = str(body.get("email") or "").strip().lower()
         con = connect()
-        row = con.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        con.close()
+        row = con.execute("SELECT * FROM users WHERE email = ? OR username = ?", (email, email)).fetchone()
         if not row or not row["active"] or not verify_password(str(body.get("password") or ""), row["password_hash"]):
+            con.close()
             return self.end_json(401, {"error": "invalid"})
+        con.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (now(), row["id"]))
+        con.commit()
+        row = con.execute("SELECT * FROM users WHERE id = ?", (row["id"],)).fetchone()
+        con.close()
         token = sign_token({"sub": row["id"], "email": row["email"], "exp": int(time.time() * 1000) + 12 * 60 * 60 * 1000})
         return self.end_json(200, {"token": token, "user": public_user(row), "version": VERSION})
 
@@ -309,24 +409,38 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(404, {"error": "not_found"})
         return self.end_json(200, {"ok": True})
 
-    def list_users(self):
+    def list_users(self, query):
         con = connect()
-        rows = con.execute("SELECT * FROM users ORDER BY id").fetchall()
+        rows = [public_user(row) for row in con.execute("SELECT * FROM users").fetchall()]
         con.close()
-        return self.end_json(200, {"items": [public_user(row) for row in rows]})
+        q = (query.get("q", [""])[0] or "").strip().lower()
+        role = (query.get("role", [""])[0] or "").strip()
+        if q:
+            rows = [item for item in rows if q in " ".join([item["username"], item["name"], item["email"], item["role"], item["roleName"]]).lower()]
+        if role and role != "all":
+            rows = [item for item in rows if item["role"] == role]
+        if query.get("includeInactive", ["0"])[0] != "1":
+            rows = [item for item in rows if item["active"]]
+        sort = query.get("sort", ["lastLoginAt"])[0]
+        direction = 1 if query.get("dir", ["desc"])[0] == "asc" else -1
+        rows.sort(key=lambda item: str(item.get(sort) or ""), reverse=direction < 0)
+        page_size = min(100, max(5, int(query.get("pageSize", ["20"])[0] or 20)))
+        page = max(1, int(query.get("page", ["1"])[0] or 1))
+        start = (page - 1) * page_size
+        return self.end_json(200, {"items": rows[start:start + page_size], "total": len(rows), "page": page, "pageSize": page_size})
 
     def create_user(self, body):
-        email = str(body.get("email") or "").strip().lower()
-        name = str(body.get("name") or "").strip()
+        fields = user_fields(body)
         password = str(body.get("password") or "")
-        if "@" not in email or not name or len(password) < 8:
+        if not fields or len(password) < 8:
             return self.end_json(400, {"error": "required"})
-        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        email, username, name, role, active = fields
+        stamp = now()
         con = connect()
         try:
             con.execute(
-                "INSERT INTO users (email, name, password_hash, role, active, created_at, updated_at) VALUES (?, ?, ?, 'admin', 1, ?, ?)",
-                (email, name, hash_password(password), now, now),
+                "INSERT INTO users (email, username, name, password_hash, role, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (email, username, name, hash_password(password), role, active, stamp, stamp),
             )
             con.commit()
         except sqlite3.IntegrityError:
@@ -342,16 +456,18 @@ class Handler(BaseHTTPRequestHandler):
         if not current:
             con.close()
             return self.end_json(404, {"error": "not_found"})
-        email = str(body.get("email") or current["email"]).strip().lower()
-        name = str(body.get("name") or current["name"]).strip()
-        active = current["active"] if "active" not in body else (1 if body.get("active") else 0)
-        if "@" not in email or not name:
+        merged = public_user(current)
+        merged.update(body)
+        fields = user_fields(merged)
+        if not fields:
             con.close()
             return self.end_json(400, {"error": "required"})
-        others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND id != ?", (item_id,)).fetchone()["n"]
-        if current["active"] and not active and others == 0:
-            con.close()
-            return self.end_json(400, {"error": "last_admin"})
+        email, username, name, role, active = fields
+        if current["role"] == "admin" and current["active"] and (role != "admin" or not active):
+            others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND role = 'admin' AND id != ?", (item_id,)).fetchone()["n"]
+            if others == 0:
+                con.close()
+                return self.end_json(400, {"error": "last_admin"})
         stored = current["password_hash"]
         if body.get("password"):
             if len(str(body["password"])) < 8:
@@ -359,8 +475,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.end_json(400, {"error": "password"})
             stored = hash_password(str(body["password"]))
         try:
-            now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            con.execute("UPDATE users SET email=?, name=?, password_hash=?, active=?, updated_at=? WHERE id=?", (email, name, stored, active, now, item_id))
+            con.execute(
+                "UPDATE users SET email=?, username=?, name=?, password_hash=?, role=?, active=?, updated_at=? WHERE id=?",
+                (email, username, name, stored, role, active, now(), item_id),
+            )
             con.commit()
         except sqlite3.IntegrityError:
             con.close()
@@ -377,11 +495,68 @@ class Handler(BaseHTTPRequestHandler):
         if not current:
             con.close()
             return self.end_json(404, {"error": "not_found"})
-        others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND id != ?", (item_id,)).fetchone()["n"]
-        if current["active"] and others == 0:
-            con.close()
-            return self.end_json(400, {"error": "last_admin"})
+        if current["role"] == "admin" and current["active"]:
+            others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND role = 'admin' AND id != ?", (item_id,)).fetchone()["n"]
+            if others == 0:
+                con.close()
+                return self.end_json(400, {"error": "last_admin"})
         con.execute("DELETE FROM users WHERE id = ?", (item_id,))
+        con.commit()
+        con.close()
+        return self.end_json(200, {"ok": True})
+
+    def list_menus(self, user, manage):
+        con = connect()
+        items = [public_menu(row) for row in con.execute("SELECT * FROM menus ORDER BY sort_order, id").fetchall()]
+        con.close()
+        if manage:
+            return self.end_json(200, {"items": items})
+        visible = [item for item in items if item["active"] and user["role"] in item["roles"]]
+        ids = {item["id"] for item in visible}
+        ids.update(item["parentId"] for item in visible if item["parentId"])
+        return self.end_json(200, {"items": [item for item in items if item["active"] and item["id"] in ids]})
+
+    def save_menu(self, item_id, body):
+        label = str(body.get("label") or "").strip()
+        view_key = str(body.get("viewKey") or "")
+        parent_id = int(body["parentId"]) if body.get("parentId") else None
+        sort_order = int(body.get("sortOrder") or 0)
+        raw_roles = body.get("roles") if isinstance(body.get("roles"), list) else str(body.get("roles") or "").split(",")
+        roles = [item.strip() for item in raw_roles if item.strip() in ROLES]
+        active = 1 if body.get("active", True) else 0
+        if not label or view_key not in VIEW_KEYS or not roles or parent_id == item_id:
+            return self.end_json(400, {"error": "required"})
+        con = connect()
+        if item_id:
+            current = con.execute("SELECT id FROM menus WHERE id = ?", (item_id,)).fetchone()
+            if not current:
+                con.close()
+                return self.end_json(404, {"error": "not_found"})
+            con.execute(
+                "UPDATE menus SET parent_id=?, label=?, view_key=?, sort_order=?, roles=?, active=? WHERE id=?",
+                (parent_id, label, view_key, sort_order, ",".join(roles), active, item_id),
+            )
+        else:
+            con.execute(
+                "INSERT INTO menus (parent_id, label, view_key, sort_order, roles, active) VALUES (?, ?, ?, ?, ?, ?)",
+                (parent_id, label, view_key, sort_order, ",".join(roles), active),
+            )
+        con.commit()
+        items = [public_menu(row) for row in con.execute("SELECT * FROM menus ORDER BY sort_order, id").fetchall()]
+        con.close()
+        return self.end_json(200 if item_id else 201, {"items": items})
+
+    def delete_menu(self, item_id):
+        con = connect()
+        current = con.execute("SELECT id FROM menus WHERE id = ?", (item_id,)).fetchone()
+        if not current:
+            con.close()
+            return self.end_json(404, {"error": "not_found"})
+        child = con.execute("SELECT id FROM menus WHERE parent_id = ?", (item_id,)).fetchone()
+        if child:
+            con.close()
+            return self.end_json(400, {"error": "children"})
+        con.execute("DELETE FROM menus WHERE id = ?", (item_id,))
         con.commit()
         con.close()
         return self.end_json(200, {"ok": True})

@@ -1,5 +1,11 @@
-const VERSION_FALLBACK = "0.1.1";
+const VERSION_FALLBACK = "0.1.2";
 const STATUSES = ["new", "in_progress", "closed"];
+const ROLES = {
+  admin: { name: "管理者", views: ["enquiries", "content", "media", "pages", "users", "menus"] },
+  editor: { name: "編輯者", views: ["enquiries", "content", "media", "pages"] }
+};
+const VIEW_KEYS = ["", "enquiries", "content", "media", "pages", "users", "menus"];
+let schemaReady = null;
 
 export default {
   async fetch(request, env) {
@@ -20,6 +26,7 @@ async function route(request, env) {
   const path = url.pathname.replace(/\/$/, "") || "/";
   const db = env.DB;
   if (!db) return json({ error: "database" }, 500, request);
+  await ensureSchema(env);
 
   if (request.method === "GET" && path === "/api/version") {
     return json({ version: env.APP_VERSION || VERSION_FALLBACK }, 200, request);
@@ -32,22 +39,94 @@ async function route(request, env) {
 
   const enquiryId = matchId(path, "/api/enquiries");
   const userId = matchId(path, "/api/users");
+  const menuId = matchId(path, "/api/menus");
   const user = await requireUser(request, env);
   if (!user) return json({ error: "unauthorized" }, 401, request);
   if (!user.active) return json({ error: "inactive" }, 403, request);
+  if (request.method === "PUT" && path === "/api/me") return updateAccount(request, env, user);
 
-  if (request.method === "GET" && path === "/api/enquiries") return listEnquiries(url, env);
-  if (request.method === "POST" && path === "/api/enquiries") return createEnquiry(request, env, false);
-  if (request.method === "GET" && enquiryId) return getEnquiry(enquiryId, env);
-  if (request.method === "PUT" && enquiryId) return updateEnquiry(enquiryId, request, env);
-  if (request.method === "DELETE" && enquiryId) return deleteEnquiry(enquiryId, env);
+  if (path === "/api/enquiries" || enquiryId) {
+    if (!allows(user, "enquiries")) return json({ error: "forbidden" }, 403, request);
+    if (request.method === "GET" && path === "/api/enquiries") return listEnquiries(url, env);
+    if (request.method === "POST" && path === "/api/enquiries") return createEnquiry(request, env, false);
+    if (request.method === "GET" && enquiryId) return getEnquiry(enquiryId, env);
+    if (request.method === "PUT" && enquiryId) return updateEnquiry(enquiryId, request, env);
+    if (request.method === "DELETE" && enquiryId) return deleteEnquiry(enquiryId, env);
+  }
 
-  if (request.method === "GET" && path === "/api/users") return listUsers(env);
-  if (request.method === "POST" && path === "/api/users") return createUser(request, env);
-  if (request.method === "PUT" && userId) return updateUser(userId, request, env, user);
-  if (request.method === "DELETE" && userId) return deleteUser(userId, env, user);
+  if (path === "/api/users" || userId) {
+    if (!allows(user, "users")) return json({ error: "forbidden" }, 403, request);
+    if (request.method === "GET" && path === "/api/users") return listUsers(url, env);
+    if (request.method === "POST" && path === "/api/users") return createUser(request, env);
+    if (request.method === "PUT" && userId) return updateUser(userId, request, env, user);
+    if (request.method === "DELETE" && userId) return deleteUser(userId, env, user);
+  }
+
+  if (path === "/api/menus" || menuId) {
+    if (request.method === "GET" && path === "/api/menus" && url.searchParams.get("scope") !== "manage") {
+      return listMenus(env, user, false);
+    }
+    if (!allows(user, "menus")) return json({ error: "forbidden" }, 403, request);
+    if (request.method === "GET" && path === "/api/menus") return listMenus(env, user, true);
+    if (request.method === "POST" && path === "/api/menus") return saveMenu(request, env, 0);
+    if (request.method === "PUT" && menuId) return saveMenu(request, env, menuId);
+    if (request.method === "DELETE" && menuId) return deleteMenu(menuId, env);
+  }
 
   return json({ error: "not_found" }, 404, request);
+}
+
+function allows(user, viewKey) {
+  const role = ROLES[user.role] || { views: [] };
+  return role.views.includes(viewKey);
+}
+
+async function ensureSchema(env) {
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      const statements = [
+        "ALTER TABLE users ADD COLUMN username TEXT",
+        "ALTER TABLE users ADD COLUMN last_login_at TEXT",
+        `CREATE TABLE IF NOT EXISTS menus (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          parent_id INTEGER,
+          label TEXT NOT NULL,
+          view_key TEXT NOT NULL DEFAULT '',
+          sort_order INTEGER NOT NULL DEFAULT 0,
+          roles TEXT NOT NULL DEFAULT 'admin',
+          active INTEGER NOT NULL DEFAULT 1
+        )`
+      ];
+      for (const sql of statements) {
+        try { await env.DB.prepare(sql).run(); } catch (error) { /* column already exists */ }
+      }
+      await env.DB.prepare(
+        "UPDATE users SET username = lower(substr(email, 1, instr(email, '@') - 1)) WHERE username IS NULL OR username = ''"
+      ).run();
+      try {
+        await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS users_username ON users(username)").run();
+      } catch (error) { /* existing duplicate usernames */ }
+      const seeds = [
+        [1, null, "內容管理", "", 10, "admin,editor"],
+        [2, 1, "客戶詢問", "enquiries", 10, "admin,editor"],
+        [3, 1, "網站內容", "content", 20, "admin,editor"],
+        [4, 1, "媒體", "media", 30, "admin,editor"],
+        [5, 1, "動態頁面", "pages", 40, "admin,editor"],
+        [6, null, "系統設定", "", 20, "admin"],
+        [7, 6, "使用者", "users", 10, "admin"],
+        [8, 6, "選單管理", "menus", 20, "admin"]
+      ];
+      for (const [id, parentId, label, viewKey, sortOrder, roles] of seeds) {
+        await env.DB.prepare(
+          "INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active) SELECT ?, ?, ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = ?)"
+        ).bind(id, parentId, label, viewKey, sortOrder, roles, id).run();
+      }
+    })().catch((error) => {
+      schemaReady = null;
+      throw error;
+    });
+  }
+  return schemaReady;
 }
 
 function matchId(path, prefix) {
@@ -59,10 +138,13 @@ async function login(request, env) {
   const body = await readBody(request);
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
-  const row = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+  const row = await env.DB.prepare("SELECT * FROM users WHERE email = ? OR username = ?").bind(email, email).first();
   if (!row || !row.active || !(await verifyPassword(password, row.password_hash))) {
     return json({ error: "invalid" }, 401, request);
   }
+  const now = new Date().toISOString();
+  await env.DB.prepare("UPDATE users SET last_login_at = ? WHERE id = ?").bind(now, row.id).run();
+  row.last_login_at = now;
   const token = await signToken({ sub: row.id, email: row.email, exp: Date.now() + 12 * 60 * 60 * 1000 }, env);
   return json({ token, user: publicUser(row), version: env.APP_VERSION || VERSION_FALLBACK }, 200, request);
 }
@@ -138,39 +220,52 @@ async function deleteEnquiry(id, env) {
   return json({ ok: true }, 200);
 }
 
-async function listUsers(env) {
-  const rows = await env.DB.prepare("SELECT * FROM users ORDER BY id").all();
-  return json({ items: (rows.results || []).map(publicUser) }, 200);
+async function listUsers(url, env) {
+  const rows = await env.DB.prepare("SELECT * FROM users").all();
+  let items = (rows.results || []).map(publicUser);
+  const q = (url.searchParams.get("q") || "").trim().toLowerCase();
+  const role = (url.searchParams.get("role") || "").trim();
+  if (q) {
+    items = items.filter((item) => [item.username, item.name, item.email, item.role, item.roleName].join(" ").toLowerCase().includes(q));
+  }
+  if (role && role !== "all") items = items.filter((item) => item.role === role);
+  if (url.searchParams.get("includeInactive") !== "1") items = items.filter((item) => item.active);
+  const sort = url.searchParams.get("sort") || "lastLoginAt";
+  const dir = url.searchParams.get("dir") === "asc" ? 1 : -1;
+  items.sort((a, b) => String(a[sort] || "").localeCompare(String(b[sort] || "")) * dir);
+  const pageSize = Math.min(100, Math.max(5, Number(url.searchParams.get("pageSize")) || 20));
+  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+  const start = (page - 1) * pageSize;
+  return json({ items: items.slice(start, start + pageSize), total: items.length, page, pageSize }, 200);
 }
 
 async function createUser(request, env) {
   const body = await readBody(request);
-  const email = String(body.email || "").trim().toLowerCase();
-  const name = String(body.name || "").trim();
-  const password = String(body.password || "");
-  if (!email.includes("@") || !name || password.length < 8) return json({ error: "required" }, 400);
-  const hash = await hashPassword(password);
+  const fields = userFields(body);
+  if (fields.error) return json({ error: fields.error }, 400);
+  if (String(body.password || "").length < 8) return json({ error: "password" }, 400);
+  const hash = await hashPassword(String(body.password));
   const now = new Date().toISOString();
   try {
     await env.DB.prepare(
-      "INSERT INTO users (email, name, password_hash, role, active, created_at, updated_at) VALUES (?, ?, ?, 'admin', 1, ?, ?)"
-    ).bind(email, name, hash, now, now).run();
+      "INSERT INTO users (email, username, name, password_hash, role, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(fields.email, fields.username, fields.name, hash, fields.role, fields.active, now, now).run();
   } catch (error) {
     return json({ error: "duplicate" }, 409);
   }
-  const row = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
+  const row = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(fields.email).first();
   return json(publicUser(row), 201);
 }
 
-async function updateUser(id, request, env, actor) {
+async function updateUser(id, request, env, actor, preset) {
   const current = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
   if (!current) return json({ error: "not_found" }, 404);
-  const body = await readBody(request);
-  const email = String(body.email || current.email).trim().toLowerCase();
-  const name = String(body.name || current.name).trim();
-  const active = body.active === undefined ? current.active : (body.active ? 1 : 0);
-  if (!email.includes("@") || !name) return json({ error: "required" }, 400);
-  if (!active && current.active && await isLastActive(env, id)) return json({ error: "last_admin" }, 400);
+  const body = preset || await readBody(request);
+  const fields = userFields({ ...publicUser(current), ...body, active: body.active === undefined ? current.active : body.active });
+  if (fields.error) return json({ error: fields.error }, 400);
+  if (current.role === "admin" && current.active && (fields.role !== "admin" || !fields.active) && await isLastAdmin(env, id)) {
+    return json({ error: "last_admin" }, 400);
+  }
   let hash = current.password_hash;
   if (body.password) {
     if (String(body.password).length < 8) return json({ error: "password" }, 400);
@@ -179,8 +274,8 @@ async function updateUser(id, request, env, actor) {
   const now = new Date().toISOString();
   try {
     await env.DB.prepare(
-      "UPDATE users SET email=?, name=?, password_hash=?, active=?, updated_at=? WHERE id=?"
-    ).bind(email, name, hash, active, now, id).run();
+      "UPDATE users SET email=?, username=?, name=?, password_hash=?, role=?, active=?, updated_at=? WHERE id=?"
+    ).bind(fields.email, fields.username, fields.name, hash, fields.role, fields.active, now, id).run();
   } catch (error) {
     return json({ error: "duplicate" }, 409);
   }
@@ -192,14 +287,90 @@ async function deleteUser(id, env, actor) {
   if (actor.id === id) return json({ error: "self" }, 400);
   const current = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
   if (!current) return json({ error: "not_found" }, 404);
-  if (current.active && await isLastActive(env, id)) return json({ error: "last_admin" }, 400);
+  if (current.role === "admin" && current.active && await isLastAdmin(env, id)) return json({ error: "last_admin" }, 400);
   await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
   return json({ ok: true }, 200);
 }
 
-async function isLastActive(env, exceptId) {
-  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND id != ?").bind(exceptId).first();
+async function isLastAdmin(env, exceptId) {
+  const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND role = 'admin' AND id != ?").bind(exceptId).first();
   return !row || Number(row.n) === 0;
+}
+
+function userFields(body) {
+  const email = String(body.email || "").trim().toLowerCase();
+  const name = String(body.name || "").trim();
+  const username = String(body.username || "").trim().toLowerCase();
+  const role = ROLES[body.role] ? body.role : "editor";
+  const active = body.active === undefined || body.active ? 1 : 0;
+  if (!email.includes("@") || !name || !/^[a-z0-9._-]{2,32}$/.test(username)) return { error: "required" };
+  return { email, name, username, role, active };
+}
+
+async function updateAccount(request, env, actor) {
+  const body = await readBody(request);
+  body.role = actor.role;
+  body.active = !!actor.active;
+  return updateUser(actor.id, request, env, actor, body);
+}
+
+async function listMenus(env, user, manage) {
+  const rows = await env.DB.prepare("SELECT * FROM menus ORDER BY sort_order, id").all();
+  const items = (rows.results || []).map(publicMenu);
+  if (manage) return json({ items }, 200);
+  const role = user.role;
+  const visible = items.filter((item) => item.active && item.roles.includes(role));
+  const ids = new Set(visible.map((item) => item.id));
+  visible.forEach((item) => { if (item.parentId) ids.add(item.parentId); });
+  return json({ items: items.filter((item) => item.active && ids.has(item.id)) }, 200);
+}
+
+async function saveMenu(request, env, id) {
+  const body = await readBody(request);
+  const label = String(body.label || "").trim();
+  const viewKey = String(body.viewKey || "");
+  const parentId = body.parentId ? Number(body.parentId) : null;
+  const sortOrder = Number(body.sortOrder) || 0;
+  const roles = (Array.isArray(body.roles) ? body.roles : String(body.roles || "").split(","))
+    .map((item) => String(item).trim()).filter((item) => ROLES[item]);
+  const active = body.active === undefined || body.active ? 1 : 0;
+  if (!label || !VIEW_KEYS.includes(viewKey) || !roles.length) return json({ error: "required" }, 400);
+  if (parentId && parentId === id) return json({ error: "parent" }, 400);
+  const roleText = roles.join(",");
+  if (id) {
+    const current = await env.DB.prepare("SELECT id FROM menus WHERE id = ?").bind(id).first();
+    if (!current) return json({ error: "not_found" }, 404);
+    await env.DB.prepare(
+      "UPDATE menus SET parent_id=?, label=?, view_key=?, sort_order=?, roles=?, active=? WHERE id=?"
+    ).bind(parentId, label, viewKey, sortOrder, roleText, active, id).run();
+  } else {
+    await env.DB.prepare(
+      "INSERT INTO menus (parent_id, label, view_key, sort_order, roles, active) VALUES (?, ?, ?, ?, ?, ?)"
+    ).bind(parentId, label, viewKey, sortOrder, roleText, active).run();
+  }
+  const rows = await env.DB.prepare("SELECT * FROM menus ORDER BY sort_order, id").all();
+  return json({ items: (rows.results || []).map(publicMenu) }, id ? 200 : 201);
+}
+
+async function deleteMenu(id, env) {
+  const current = await env.DB.prepare("SELECT id FROM menus WHERE id = ?").bind(id).first();
+  if (!current) return json({ error: "not_found" }, 404);
+  const child = await env.DB.prepare("SELECT id FROM menus WHERE parent_id = ?").bind(id).first();
+  if (child) return json({ error: "children" }, 400);
+  await env.DB.prepare("DELETE FROM menus WHERE id = ?").bind(id).run();
+  return json({ ok: true }, 200);
+}
+
+function publicMenu(row) {
+  return {
+    id: row.id,
+    parentId: row.parent_id,
+    label: row.label,
+    viewKey: row.view_key,
+    sortOrder: row.sort_order,
+    roles: String(row.roles || "").split(",").filter(Boolean),
+    active: !!row.active
+  };
 }
 
 function normalizeEnquiry(body) {
@@ -249,7 +420,19 @@ function publicEnquiry(row) {
 }
 
 function publicUser(row) {
-  return { id: row.id, email: row.email, name: row.name, role: row.role, active: !!row.active, createdAt: row.created_at };
+  const role = ROLES[row.role] ? row.role : "editor";
+  return {
+    id: row.id,
+    email: row.email,
+    username: row.username || "",
+    name: row.name,
+    role,
+    roleName: (ROLES[role] || {}).name || role,
+    permissions: (ROLES[role] || {}).views || [],
+    active: !!row.active,
+    lastLoginAt: row.last_login_at || "",
+    createdAt: row.created_at
+  };
 }
 
 async function requireUser(request, env) {

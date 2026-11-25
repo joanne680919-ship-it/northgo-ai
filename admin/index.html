@@ -7,10 +7,11 @@
   <link rel="icon" href="/northgo-ai/favicon.png">
   <script src="/northgo-ai/assets/site-config.js"></script>
   <style>
-    :root { --navy:#0a1b33; --ink:#0a1b33; --muted:#5d6c7b; --line:#d7e0e8; --paper:#f4f7f8; --card:#fff; --cyan:#00bfbf; --deep:#087a86; --radius:16px; --font:"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif; }
+    :root { --navy:#10192b; --ink:#172033; --muted:#667085; --line:#e6ebf2; --paper:#f3f5f8; --cyan:#14b8a6; --blue:#2563eb; --font:"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif; }
     * { box-sizing:border-box; }
     [hidden] { display:none !important; }
     body { margin:0; font-family:var(--font); color:var(--ink); background:var(--paper); }
+    body:has(.app:not([hidden])) { height:100vh; overflow:hidden; }
     button, input, select, textarea { font:inherit; }
     button { cursor:pointer; }
     .login { min-height:100vh; display:grid; grid-template-columns:1.15fr .85fr; }
@@ -20,52 +21,66 @@
     .login-visual h1 { margin:.4rem 0; font-size:clamp(2rem,4vw,3.2rem); }
     .login-panel { display:flex; align-items:center; justify-content:center; padding:2rem; background:#fff; }
     .card { width:min(100%,420px); }
-    .logo { font-weight:800; letter-spacing:-.04em; font-size:1.7rem; color:var(--navy); }
-    .logo span { color:var(--cyan); }
+    .logo { font-weight:800; letter-spacing:-.04em; font-size:1.7rem; color:#0a1b33; }
+    .logo span { color:#00bfbf; }
     label { display:flex; flex-direction:column; gap:.35rem; font-weight:650; margin-top:.9rem; }
-    input, select, textarea { border:1px solid var(--line); border-radius:12px; min-height:46px; padding:.65rem .8rem; background:#fff; color:inherit; }
+    input, select, textarea { border:1px solid var(--line); border-radius:12px; min-height:44px; padding:.65rem .8rem; background:#fff; color:inherit; }
     textarea { min-height:110px; resize:vertical; }
-    .btn { border:0; border-radius:999px; min-height:44px; padding:.55rem 1.1rem; background:var(--cyan); color:var(--navy); font-weight:750; }
-    .btn.ghost { background:#fff; border:1px solid var(--line); }
-    .btn.warn { background:#fff4ec; color:#8a3d12; }
-    .error { color:#8a3d12; background:#fff4ec; border-radius:12px; padding:.7rem .85rem; margin-top:.8rem; }
-    .version { color:var(--muted); font-size:.88rem; margin-top:1.2rem; }
-    aside .front-link { margin:.8rem 0 0; }
-    aside .front-link a { display:block; color:#9fe9e9; font-weight:700; text-decoration:none; border-radius:12px; min-height:44px; padding:.55rem .75rem; }
-    aside .front-link a:hover { background:#13264b; color:#fff; }
-    .shell { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
-    aside { background:var(--navy); color:#e7f4f8; display:flex; flex-direction:column; padding:1.2rem 1rem; }
-    aside .logo { color:#fff; }
-    aside nav { display:grid; gap:.35rem; margin-top:1.4rem; }
-    aside nav button { text-align:left; border:0; background:transparent; color:#d5e4ea; border-radius:12px; min-height:44px; padding:.55rem .75rem; font-weight:700; }
-    aside nav button[aria-current="page"] { background:#13264b; color:#fff; }
-    aside .version { margin-top:auto; color:#9fe9e9; }
-    main { padding:1.25rem; }
-    header.bar { display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:1rem; }
-    h2 { margin:0; font-size:1.6rem; }
-    .tools { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1rem; }
-    .tools input, .tools select { min-width:12rem; background:#fff; }
-    table { width:100%; border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; }
-    th, td { text-align:left; padding:.75rem .85rem; border-bottom:1px solid var(--line); vertical-align:top; }
-    th { font-size:.78rem; letter-spacing:.04em; color:var(--muted); }
-    tr.clickable { cursor:pointer; }
-    tr.clickable:hover { background:#f7fbfc; }
-    .pill { display:inline-flex; border-radius:999px; padding:.15rem .55rem; font-size:.78rem; font-weight:750; background:#e7f8f8; color:var(--deep); }
-    .pill.new { background:#e7f8f8; }
-    .pill.in_progress { background:#fff6d8; color:#7a5b00; }
-    .pill.closed { background:#eef1f4; color:#52606d; }
-    .who { display:flex; gap:.7rem; align-items:center; }
-    .avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; color:#0a1b33; font-weight:800; background-size:cover; background-position:center; }
-    .empty { background:#fff; border:1px dashed var(--line); border-radius:16px; padding:2rem; color:var(--muted); }
+    .btn { border:0; border-radius:999px; min-height:40px; padding:.45rem 1rem; background:var(--cyan); color:#073b34; font-weight:750; }
+    .btn.ghost { background:#fff; border:1px solid #d5dbe3; color:var(--ink); }
+    .btn.warn { background:#fff1f2; color:#be123c; }
+    .error { color:#9a3412; background:#fff7ed; border-radius:12px; padding:.7rem .85rem; margin-top:.8rem; }
+    .version { color:#667085; font-size:.88rem; margin-top:1.2rem; }
+    .app { height:100vh; display:grid; grid-template-rows:64px minmax(0,1fr); }
+    .top { background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 1rem 0 1.1rem; gap:1rem; }
+    .brand { display:flex; align-items:center; gap:.7rem; font-weight:800; letter-spacing:-.03em; font-size:1.25rem; }
+    .brand span { color:#2dd4bf; }
+    .product { font-weight:650; font-size:.95rem; letter-spacing:0; color:#e5eef5; }
+    .ver { border:1px solid rgba(255,255,255,.35); border-radius:999px; padding:.1rem .55rem; font-size:.78rem; font-weight:700; }
+    .top-actions { display:flex; align-items:center; gap:.55rem; }
+    .me-chip { display:flex; align-items:center; gap:.55rem; margin-right:.4rem; }
+    .me-chip small { display:block; color:#b7c3d0; font-weight:600; }
+    .role-pill { display:inline-flex; align-items:center; gap:.2rem; border-radius:999px; padding:.12rem .55rem; font-size:.75rem; font-weight:750; background:#e7f8f4; color:#0f766e; white-space:nowrap; }
+    .role-pill.editor { background:#e8f0ff; color:#1d4ed8; }
+    .top .btn { background:#fff; color:var(--navy); }
+    .frame { display:grid; grid-template-columns:232px 1fr; min-height:0; }
+    aside { background:#17191d; color:#d5dbe3; padding:.9rem .7rem 1rem; display:flex; flex-direction:column; min-height:0; overflow:auto; }
+    .nav-label { margin:.2rem .6rem .55rem; color:#8b93a1; font-size:.78rem; font-weight:700; }
+    nav { display:grid; gap:.15rem; }
+    .group { margin:.55rem .35rem .15rem; color:#c5ced8; font-size:.92rem; font-weight:700; display:flex; align-items:center; gap:.4rem; }
+    nav button { text-align:left; border:0; background:transparent; color:#e8edf3; border-radius:10px; min-height:40px; padding:.4rem .7rem .4rem 1.7rem; font-weight:700; }
+    nav button[aria-current="page"] { background:#2457d6; color:#fff; }
+    .front { margin-top:auto; color:#9fe9e9; text-decoration:none; font-weight:700; padding:.7rem .6rem; }
+    main { padding:1.1rem 1.2rem 1.5rem; min-width:0; overflow:auto; }
+    .panel { background:#fff; border-radius:16px; border:1px solid var(--line); overflow:auto; }
+    .panel-head { display:flex; align-items:center; gap:.45rem; padding:.85rem 1rem; border-bottom:1px solid var(--line); font-weight:800; }
+    .tools { display:flex; flex-wrap:wrap; gap:.7rem; align-items:end; padding:1rem; }
+    .tools label { margin:0; font-size:.84rem; color:#526071; min-width:9rem; }
+    .tools .grow { flex:1; min-width:16rem; }
+    .tools .actions { margin-left:auto; display:flex; gap:.45rem; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:.8rem .9rem; border-bottom:1px solid var(--line); vertical-align:middle; }
+    th { font-size:.8rem; color:#7b8794; font-weight:700; background:#fafbfc; }
+    th button { border:0; background:transparent; color:inherit; font-weight:700; padding:0; }
+    .who { display:flex; gap:.65rem; align-items:center; }
+    .avatar { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:800; background:#243044; flex:none; }
+    .avatar.soft { color:#0a1b33; }
+    .handle { color:#667085; font-weight:650; }
+    .you { margin-left:.35rem; background:#111827; color:#fff; border-radius:999px; font-size:.7rem; padding:.05rem .35rem; }
+    .ops { display:flex; gap:.4rem; justify-content:flex-end; }
+    .icon { width:34px; height:34px; border:0; border-radius:10px; font-weight:800; }
+    .icon.edit { background:#f6e7c1; color:#8a5a00; }
+    .icon.del { background:#fde2e4; color:#be123c; }
+    .pager { display:flex; gap:.6rem; align-items:center; padding:.8rem 1rem; color:#667085; }
+    .empty { padding:2rem 1rem; color:#667085; }
     dialog { border:0; border-radius:18px; padding:0; width:min(640px,calc(100% - 2rem)); box-shadow:0 24px 60px rgba(10,27,51,.18); }
-    dialog form { padding:1.2rem 1.2rem 1.3rem; }
+    dialog form { padding:1.2rem; }
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
-    .actions { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:flex-end; margin-top:1rem; }
+    .actions-row { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:flex-end; margin-top:1rem; }
     .check { flex-direction:row; align-items:center; font-weight:600; }
     @media (max-width:860px) {
-      .login, .shell { grid-template-columns:1fr; }
-      .login-visual { min-height:220px; }
-      aside nav { grid-template-columns:1fr 1fr; }
+      .login, .frame { grid-template-columns:1fr; }
+      .login-visual { min-height:180px; }
       .row2 { grid-template-columns:1fr; }
       table { display:block; overflow-x:auto; }
     }
@@ -77,55 +92,57 @@
       <div>
         <p class="logo">North<span>go</span></p>
         <h1>客戶詢問，集中在這裡。</h1>
-        <p>前台送出的詢價會出現在客戶詢問。多位管理者可以一起維護。</p>
+        <p>登入後可依角色使用選單。管理者可以維護使用者和後台選單。</p>
       </div>
     </div>
     <div class="login-panel">
       <form class="card" id="login-form">
         <p class="logo">North<span>go</span></p>
         <h2>後台登入</h2>
-        <label>電子郵件<input type="email" name="email" autocomplete="username" required value="admin@northgo.com"></label>
+        <label>帳號或電子郵件<input name="email" autocomplete="username" required value="admin@northgo.com"></label>
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
-        <div class="actions"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.1</span></p>
+        <div class="actions-row"><button class="btn" type="submit">登入</button></div>
+        <p class="version">版本 <span data-version>0.1.2</span></p>
       </form>
     </div>
   </section>
-  <div class="shell" id="app" hidden>
-    <aside>
-      <p class="logo">North<span>go</span></p>
-      <nav>
-        <button type="button" data-view="enquiries" aria-current="page">客戶詢問</button>
-        <button type="button" data-view="users">使用者管理</button>
-      </nav>
-      <p class="front-link"><a href="https://joanne680919-ship-it.github.io/northgo-ai/zh-tw/services/freight-logistics/">前往前台貨運物流</a></p>
-      <p class="version">版本 <span data-version>0.1.1</span></p>
-      <button class="btn ghost" type="button" id="logout" style="margin-top:.8rem">登出</button>
-    </aside>
-    <main>
-      <header class="bar">
-        <div>
-          <h2 id="title">客戶詢問</h2>
-          <p id="hint" style="margin:.25rem 0 0;color:#5d6c7b"></p>
-        </div>
-        <button class="btn" type="button" id="create">新增</button>
-      </header>
-      <p class="error" id="banner" hidden></p>
-      <div id="view"></div>
-    </main>
+  <div class="app" id="app" hidden>
+    <header class="top">
+      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.2</span></span></div>
+      <div class="top-actions">
+        <div class="me-chip" id="me-chip"></div>
+        <button class="btn" type="button" id="account">我的帳號</button>
+        <button class="btn" type="button" id="logout">登出</button>
+      </div>
+    </header>
+    <div class="frame">
+      <aside>
+        <p class="nav-label">功能</p>
+        <nav id="nav"></nav>
+        <a class="front" href="https://joanne680919-ship-it.github.io/northgo-ai/zh-tw/services/freight-logistics/">前往前台貨運物流</a>
+      </aside>
+      <main>
+        <p class="error" id="banner" hidden></p>
+        <div id="view"></div>
+      </main>
+    </div>
   </div>
   <dialog id="editor"><form id="editor-form"></form></dialog>
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.1";
+    const VERSION = window.NORTHGO_VERSION || "0.1.2";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
     const statusNames = { new: "新進", in_progress: "處理中", closed: "已結案" };
-    let view = "enquiries";
+    const viewNames = { enquiries: "客戶詢問", content: "網站內容", media: "媒體", pages: "動態頁面", users: "使用者", menus: "選單管理" };
+    const roleNames = { admin: "管理者", editor: "編輯者" };
+    let view = "users";
     let me = null;
+    let menus = [];
+    let userState = { q: "", role: "", page: 1, pageSize: 20, sort: "lastLoginAt", dir: "desc", includeInactive: sessionStorage.getItem("northgo-show-inactive") === "1" };
 
     function token() { return sessionStorage.getItem(tokenKey) || ""; }
     async function api(path, options) {
@@ -143,11 +160,7 @@
       error.hidden = !message;
       error.textContent = message || "";
     }
-    function showApp() {
-      document.getElementById("login").hidden = true;
-      document.getElementById("app").hidden = false;
-      render();
-    }
+    function showApp() { document.getElementById("login").hidden = true; document.getElementById("app").hidden = false; }
     document.getElementById("login-form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const form = new FormData(event.target);
@@ -160,20 +173,56 @@
         sessionStorage.setItem(tokenKey, data.token);
         if (data.version) document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = data.version; });
         me = data.user;
-        showApp();
+        await enter();
       } catch (error) {
         showLogin(!API ? "後台 API 尚未連線。GitHub Pages 沒有資料庫，請先部署 Cloudflare Worker。" : "帳號或密碼不正確。");
       }
     });
     document.getElementById("logout").addEventListener("click", () => { sessionStorage.removeItem(tokenKey); showLogin(); });
-    document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.view; render(); }));
-    document.getElementById("create").addEventListener("click", () => openEditor(view === "users" ? { kind: "user" } : { kind: "enquiry", services: [] }));
+    document.getElementById("account").addEventListener("click", () => openEditor(Object.assign({ kind: "account" }, me)));
 
-    function avatar(name) {
-      const colors = ["#b7efe8", "#c9ddff", "#ffe3b8", "#f7d0e0", "#d9f2c8"];
+    function avatar(name, soft) {
+      const colors = ["#243044", "#0f766e", "#1d4ed8", "#9a3412", "#6d28d9"];
       const letter = (name || "?").trim().slice(0, 1).toUpperCase();
-      const color = colors[(name || "").length % colors.length];
-      return `<span class="avatar" style="background:${color}">${letter}</span>`;
+      const color = soft ? ["#d9f2c8", "#c9ddff", "#ffe3b8", "#f7d0e0"][(name || "").length % 4] : colors[(name || "").length % colors.length];
+      return `<span class="avatar${soft ? " soft" : ""}" style="background:${color}">${escapeHtml(letter)}</span>`;
+    }
+    function paintChrome() {
+      const chip = document.getElementById("me-chip");
+      chip.innerHTML = `${avatar(me.name)}<div><strong>${escapeHtml(me.name)}</strong><small>@${escapeHtml(me.username)}</small></div><span class="role-pill ${me.role}">${me.role === "admin" ? "★" : "👤"} ${escapeHtml(me.roleName)}</span>`;
+      const groups = menus.filter((item) => !item.parentId);
+      document.getElementById("nav").innerHTML = groups.map((group) => {
+        const children = menus.filter((item) => item.parentId === group.id && item.viewKey);
+        if (!children.length) return "";
+        return `<div class="group">▾ ${escapeHtml(group.label)}</div>` + children.map((item) => `<button type="button" data-view="${item.viewKey}" ${item.viewKey === view ? 'aria-current="page"' : ""}>${escapeHtml(item.label)}</button>`).join("");
+      }).join("");
+      document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.view; paintChrome(); render(); }));
+    }
+    async function enter() {
+      menus = (await api("/api/menus")).items;
+      const allowed = new Set(menus.map((item) => item.viewKey).filter(Boolean));
+      if (!allowed.has(view)) view = [...allowed][0] || "enquiries";
+      showApp();
+      paintChrome();
+      render();
+    }
+    function mark(key) {
+      if (userState.sort !== key) return "↕";
+      return userState.dir === "asc" ? "↑" : "↓";
+    }
+    function formatTime(value) {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+    function openSettings() {
+      document.getElementById("editor-form").innerHTML = `<h2>使用者列表設定</h2>
+        <label class="check"><input type="checkbox" name="includeInactive" ${userState.includeInactive ? "checked" : ""}> 顯示已停用的帳號</label>
+        <input type="hidden" name="kind" value="settings">
+        <div class="actions-row"><button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+      document.getElementById("editor").showModal();
     }
     function banner(text) {
       const node = document.getElementById("banner");
@@ -181,69 +230,157 @@
       node.textContent = text || "";
     }
     async function render() {
-      document.querySelectorAll("[data-view]").forEach((button) => {
-      if (button.dataset.view === view) button.setAttribute("aria-current", "page");
-      else button.removeAttribute("aria-current");
-    });
-      document.getElementById("title").textContent = view === "users" ? "使用者管理" : "客戶詢問";
-      document.getElementById("hint").textContent = view === "users" ? "可以新增多位管理者，一起維護前台詢問。" : "前台聯絡表單送出後，內容會列在這裡。";
-      document.getElementById("create").textContent = view === "users" ? "新增管理者" : "新增詢問";
       const host = document.getElementById("view");
       try {
-        host.innerHTML = view === "users" ? await usersView() : await enquiriesView();
+        host.innerHTML = view === "users" ? await usersView() : view === "menus" ? await menusView() : view === "enquiries" ? await enquiriesView() : placeholder();
+        banner("");
       } catch (error) {
         host.innerHTML = "";
-        banner(error.message === "offline" ? "後台 API 尚未連線，所以還查不到詢問。" : "讀取失敗，請重新登入。");
+        banner(error.status === 403 ? "這個角色不能使用此功能。" : error.message === "offline" ? "後台 API 尚未連線。" : "讀取失敗，請重新登入。");
         if (error.status === 401) showLogin("登入已過期。");
       }
+    }
+    function placeholder() {
+      return `<section class="panel"><div class="panel-head">${escapeHtml(viewNames[view] || view)}</div><div class="empty">此選單已依角色顯示。內容維護會接在這個頁面。</div></section>`;
+    }
+    async function usersView() {
+      const data = await api(`/api/users?q=${encodeURIComponent(userState.q)}&role=${encodeURIComponent(userState.role)}&page=${userState.page}&pageSize=${userState.pageSize}&sort=${userState.sort}&dir=${userState.dir}&includeInactive=${userState.includeInactive ? "1" : "0"}`);
+      const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
+      const rows = data.items.map((item) => `<tr>
+        <td><div class="who">${avatar(item.name)}<div><strong>@${escapeHtml(item.username)}</strong>${item.id === me.id ? '<span class="you">你</span>' : ""}</div></div></td>
+        <td>${escapeHtml(item.name)}</td>
+        <td><span class="role-pill ${item.role}">${item.role === "admin" ? "★" : "👤"} ${escapeHtml(item.roleName)}</span></td>
+        <td>${formatTime(item.lastLoginAt)}</td>
+        <td><div class="ops"><button class="icon edit" type="button" data-edit="${item.id}" aria-label="編輯">✎</button><button class="icon del" type="button" data-del="${item.id}" aria-label="刪除">🗑</button></div></td>
+      </tr>`).join("");
+      const roleOptions = [["", "全部"], ["admin", "管理者"], ["editor", "編輯者"]].map(([value, label]) => `<option value="${value}"${userState.role === value ? " selected" : ""}>${label}</option>`).join("");
+      return `<section class="panel"><div class="panel-head">使用者</div>
+        <form class="tools" id="user-tools">
+          <label class="grow">搜尋<input id="q" placeholder="帳號、顯示名稱、角色" value="${escapeHtml(userState.q)}"></label>
+          <label>角色<select id="role">${roleOptions}</select></label>
+          <label>每頁<select id="pageSize">${[10, 20, 50].map((size) => `<option ${userState.pageSize === size ? "selected" : ""}>${size}</option>`).join("")}</select></label>
+          <div class="actions"><button class="btn ghost" type="button" id="settings">設定</button><button class="btn ghost" type="button" id="reload">重新載入</button><button class="btn" type="button" id="create">新增使用者</button></div>
+        </form>
+        <table><thead><tr><th><button type="button" data-sort="username">帳號 ${mark("username")}</button></th><th><button type="button" data-sort="name">顯示名稱 ${mark("name")}</button></th><th><button type="button" data-sort="role">角色 ${mark("role")}</button></th><th><button type="button" data-sort="lastLoginAt">最後登入 ${mark("lastLoginAt")}</button></th><th>操作</th></tr></thead><tbody>${rows || `<tr><td colspan="5"><div class="empty">沒有符合的使用者。</div></td></tr>`}</tbody></table>
+        <div class="pager"><span>共 ${data.total} 筆 · 第 ${data.page} / ${pages} 頁</span><button class="btn ghost" type="button" id="prev" ${data.page <= 1 ? "disabled" : ""}>上一頁</button><button class="btn ghost" type="button" id="next" ${data.page >= pages ? "disabled" : ""}>下一頁</button></div>
+      </section>`;
+    }
+    async function menusView() {
+      const data = await api("/api/menus?scope=manage");
+      const byId = Object.fromEntries(data.items.map((item) => [item.id, item]));
+      const rows = data.items.map((item) => `<tr>
+        <td>${escapeHtml(item.label)}</td>
+        <td>${item.parentId && byId[item.parentId] ? escapeHtml(byId[item.parentId].label) : "—"}</td>
+        <td>${escapeHtml(viewNames[item.viewKey] || (item.viewKey ? item.viewKey : "群組"))}</td>
+        <td>${item.roles.map((role) => roleNames[role] || role).join("、")}</td>
+        <td>${item.sortOrder}</td>
+        <td>${item.active ? "顯示" : "隱藏"}</td>
+        <td><div class="ops"><button class="icon edit" type="button" data-menu="${item.id}" aria-label="編輯">✎</button><button class="icon del" type="button" data-menu-del="${item.id}" aria-label="刪除">🗑</button></div></td>
+      </tr>`).join("");
+      return `<section class="panel"><div class="panel-head">選單管理</div><div class="tools"><div class="actions"><button class="btn" type="button" id="create">新增選單</button></div></div><table><thead><tr><th>名稱</th><th>上層</th><th>功能</th><th>可見角色</th><th>排序</th><th>狀態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     }
     async function enquiriesView() {
       const q = document.getElementById("q") ? document.getElementById("q").value : "";
       const status = document.getElementById("status") ? document.getElementById("status").value : "";
       const data = await api("/api/enquiries?q=" + encodeURIComponent(q) + "&status=" + encodeURIComponent(status));
-      banner("");
-      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td>${item.createdAt.slice(0, 16).replace("T", " ")}</td><td><div class="who">${avatar(item.company)}<div><strong>${escapeHtml(item.company)}</strong><div>${escapeHtml(item.lastName)}${escapeHtml(item.firstName)}</div></div></div></td><td>${escapeHtml(item.email)}<br>${escapeHtml(item.phone)}</td><td>${item.services.map((name) => serviceNames[name] || name).join("、") || "—"}</td><td><span class="pill ${item.status}">${statusNames[item.status] || item.status}</span></td></tr>`).join("");
+      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td>${item.createdAt.slice(0, 16).replace("T", " ")}</td><td><div class="who">${avatar(item.company, true)}<div><strong>${escapeHtml(item.company)}</strong><div>${escapeHtml(item.lastName)}${escapeHtml(item.firstName)}</div></div></div></td><td>${escapeHtml(item.email)}<br>${escapeHtml(item.phone)}</td><td>${item.services.map((name) => serviceNames[name] || name).join("、") || "—"}</td><td><span class="role-pill">${statusNames[item.status] || item.status}</span></td></tr>`).join("");
       const options = [["", "全部狀態"], ["new", "新進"], ["in_progress", "處理中"], ["closed", "已結案"]].map(([value, label]) => `<option value="${value}"${status === value ? " selected" : ""}>${label}</option>`).join("");
-      return `<div class="tools"><input id="q" placeholder="搜尋公司、姓名、信箱" value="${escapeHtml(q)}"><select id="status">${options}</select><button class="btn ghost" type="button" id="search">查詢</button></div>${rows ? `<table><thead><tr><th>時間</th><th>公司</th><th>聯絡</th><th>服務</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">沒有符合的詢問。</div>`}`;
-    }
-    async function usersView() {
-      const data = await api("/api/users");
-      banner("");
-      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td><div class="who">${avatar(item.name)}<div><strong>${escapeHtml(item.name)}</strong><div>${escapeHtml(item.email)}</div></div></div></td><td>${item.active ? "使用中" : "已停用"}</td><td>${item.id === me.id ? "目前登入" : "管理者"}</td></tr>`).join("");
-      return `<table><thead><tr><th>管理者</th><th>狀態</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+      return `<section class="panel"><div class="panel-head">客戶詢問</div><div class="tools"><label class="grow">搜尋<input id="q" placeholder="公司、姓名、信箱" value="${escapeHtml(q)}"></label><label>狀態<select id="status">${options}</select></label><div class="actions"><button class="btn ghost" type="button" id="search">查詢</button><button class="btn" type="button" id="create">新增詢問</button></div></div>${rows ? `<table><thead><tr><th>時間</th><th>公司</th><th>聯絡</th><th>服務</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">沒有符合的詢問。</div>`}</section>`;
     }
     document.getElementById("view").addEventListener("click", async (event) => {
-      if (event.target.id === "search") return render();
-      const row = event.target.closest("[data-id]");
-      if (!row) return;
-      if (view === "users") {
-        const data = await api("/api/users");
-        openEditor(Object.assign({ kind: "user" }, data.items.find((item) => String(item.id) === row.dataset.id)));
-      } else {
-        openEditor(Object.assign({ kind: "enquiry" }, await api("/api/enquiries/" + row.dataset.id)));
+      if (event.target.id === "settings") return openSettings();
+      if (event.target.id === "search" || event.target.id === "reload") {
+        if (view === "users") readUserTools();
+        return render();
       }
+      if (event.target.id === "prev" || event.target.id === "next") {
+        readUserTools();
+        userState.page += event.target.id === "next" ? 1 : -1;
+        return render();
+      }
+      if (event.target.dataset.sort) {
+        userState.sort = event.target.dataset.sort;
+        userState.dir = userState.dir === "asc" ? "desc" : "asc";
+        return render();
+      }
+      if (event.target.id === "create") {
+        return openEditor(view === "users" ? { kind: "user", role: "editor", active: true } : view === "menus" ? { kind: "menu", roles: ["admin"], active: true, sortOrder: 30 } : { kind: "enquiry", services: [] });
+      }
+      if (event.target.dataset.edit) return openUser(event.target.dataset.edit);
+      if (event.target.dataset.del) return removeUser(event.target.dataset.del);
+      if (event.target.dataset.menu) return openMenu(event.target.dataset.menu);
+      if (event.target.dataset.menuDel) return removeMenu(event.target.dataset.menuDel);
+      const row = event.target.closest("[data-id]");
+      if (row && view === "enquiries") openEditor(Object.assign({ kind: "enquiry" }, await api("/api/enquiries/" + row.dataset.id)));
     });
-    document.getElementById("view").addEventListener("change", (event) => { if (event.target.id === "status") render(); });
-    document.getElementById("view").addEventListener("keydown", (event) => { if (event.key === "Enter" && event.target.id === "q") render(); });
-
+    document.getElementById("view").addEventListener("change", (event) => {
+      if (view === "users" && (event.target.id === "role" || event.target.id === "pageSize")) { readUserTools(); userState.page = 1; render(); }
+      if (event.target.id === "status") render();
+    });
+    function readUserTools() {
+      const q = document.getElementById("q");
+      const role = document.getElementById("role");
+      const pageSize = document.getElementById("pageSize");
+      if (q) userState.q = q.value.trim();
+      if (role) userState.role = role.value;
+      if (pageSize) userState.pageSize = Number(pageSize.value);
+    }
+    async function openUser(id) {
+      const data = await api("/api/users?pageSize=100");
+      openEditor(Object.assign({ kind: "user" }, data.items.find((item) => String(item.id) === String(id))));
+    }
+    async function openMenu(id) {
+      const data = await api("/api/menus?scope=manage");
+      openEditor(Object.assign({ kind: "menu" }, data.items.find((item) => String(item.id) === String(id))));
+    }
+    async function removeUser(id) {
+      if (!confirm("確定刪除這位使用者？")) return;
+      try { await api("/api/users/" + id, { method: "DELETE" }); render(); }
+      catch (error) { alert(messageFor(error)); }
+    }
+    async function removeMenu(id) {
+      if (!confirm("確定刪除這個選單？")) return;
+      try { await api("/api/menus/" + id, { method: "DELETE" }); await enter(); }
+      catch (error) { alert(messageFor(error)); }
+    }
     function openEditor(item) {
-      const form = document.getElementById("editor-form");
-      form.innerHTML = item.kind === "user" ? userForm(item) : enquiryForm(item);
+      document.getElementById("editor-form").innerHTML = item.kind === "user" || item.kind === "account" ? userForm(item) : item.kind === "menu" ? menuForm(item) : enquiryForm(item);
       document.getElementById("editor").showModal();
+    }
+    function userForm(item) {
+      const account = item.kind === "account";
+      return `<h2>${account ? "我的帳號" : item.id ? "編輯使用者" : "新增使用者"}</h2>
+        <div class="row2"><label>顯示名稱<input name="name" required value="${escapeHtml(item.name || "")}"></label><label>帳號<input name="username" required value="${escapeHtml(item.username || "")}" pattern="[A-Za-z0-9._-]{2,32}"></label></div>
+        <label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label>
+        ${account ? "" : `<label>角色<select name="role">${Object.entries(roleNames).map(([value, label]) => `<option value="${value}" ${item.role === value ? "selected" : ""}>${label}</option>`).join("")}</select></label>`}
+        <label>密碼<input name="password" type="password" ${item.id ? "" : "required"} minlength="8" placeholder="${item.id ? "留白表示不改密碼" : "至少 8 碼"}"></label>
+        ${account ? "" : `<label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 可登入</label>`}
+        <input type="hidden" name="kind" value="${item.kind}"><input type="hidden" name="id" value="${item.id || ""}">
+        <div class="actions-row"><button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+    }
+    function menuForm(item) {
+      const parents = menus.filter((menu) => !menu.viewKey && menu.id !== item.id).map((menu) => `<option value="${menu.id}" ${item.parentId === menu.id ? "selected" : ""}>${escapeHtml(menu.label)}</option>`).join("");
+      const views = Object.entries(viewNames).map(([value, label]) => `<option value="${value}" ${item.viewKey === value ? "selected" : ""}>${label}</option>`).join("");
+      return `<h2>${item.id ? "編輯選單" : "新增選單"}</h2>
+        <label>名稱<input name="label" required value="${escapeHtml(item.label || "")}"></label>
+        <div class="row2"><label>上層<select name="parentId"><option value="">（群組）</option>${parents}</select></label><label>功能<select name="viewKey"><option value="">群組，沒有頁面</option>${views}</select></label></div>
+        <label>排序<input name="sortOrder" type="number" value="${item.sortOrder || 0}"></label>
+        <label class="check"><input type="checkbox" name="role-admin" ${!item.roles || item.roles.includes("admin") ? "checked" : ""}> 管理者可見</label>
+        <label class="check"><input type="checkbox" name="role-editor" ${item.roles && item.roles.includes("editor") ? "checked" : ""}> 編輯者可見</label>
+        <label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 顯示</label>
+        <input type="hidden" name="kind" value="menu"><input type="hidden" name="id" value="${item.id || ""}">
+        <div class="actions-row"><button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
     }
     function enquiryForm(item) {
       const checks = Object.entries(serviceNames).map(([value, label]) => `<label class="check"><input type="checkbox" name="services" value="${value}" ${item.services && item.services.includes(value) ? "checked" : ""}> ${label}</label>`).join("");
-      return `<h2>${item.id ? "編輯詢問" : "新增詢問"}</h2><div class="row2"><label>名字<input name="firstName" required value="${escapeHtml(item.firstName || "")}"></label><label>姓氏<input name="lastName" required value="${escapeHtml(item.lastName || "")}"></label></div><label>公司<input name="company" required value="${escapeHtml(item.company || "")}"></label><div class="row2"><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>電話<input name="phone" required value="${escapeHtml(item.phone || "")}"></label></div><div class="row2"><label>國家<input name="country" required value="${escapeHtml(item.country || "")}"></label><label>狀態<select name="status">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="row2">${checks}</div><label>訊息<textarea name="message" required>${escapeHtml(item.message || "")}</textarea></label><label>內部備註<textarea name="notes">${escapeHtml(item.notes || "")}</textarea></label><input type="hidden" name="id" value="${item.id || ""}"><div class="actions">${item.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
-    }
-    function userForm(item) {
-      return `<h2>${item.id ? "編輯管理者" : "新增管理者"}</h2><label>姓名<input name="name" required value="${escapeHtml(item.name || "")}"></label><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>密碼<input name="password" type="password" ${item.id ? "" : "required"} minlength="8" placeholder="${item.id ? "留白表示不改密碼" : "至少 8 碼"}"></label><label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 可登入</label><input type="hidden" name="id" value="${item.id || ""}"><div class="actions">${item.id && item.id !== me.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+      return `<h2>${item.id ? "編輯詢問" : "新增詢問"}</h2><div class="row2"><label>名字<input name="firstName" required value="${escapeHtml(item.firstName || "")}"></label><label>姓氏<input name="lastName" required value="${escapeHtml(item.lastName || "")}"></label></div><label>公司<input name="company" required value="${escapeHtml(item.company || "")}"></label><div class="row2"><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>電話<input name="phone" required value="${escapeHtml(item.phone || "")}"></label></div><div class="row2"><label>國家<input name="country" required value="${escapeHtml(item.country || "")}"></label><label>狀態<select name="status">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="row2">${checks}</div><label>訊息<textarea name="message" required>${escapeHtml(item.message || "")}</textarea></label><label>內部備註<textarea name="notes">${escapeHtml(item.notes || "")}</textarea></label><input type="hidden" name="kind" value="enquiry"><input type="hidden" name="id" value="${item.id || ""}"><div class="actions-row">${item.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
     }
     document.getElementById("editor-form").addEventListener("click", async (event) => {
       if (event.target.id === "cancel") document.getElementById("editor").close();
       if (event.target.id !== "remove") return;
       const id = new FormData(event.currentTarget).get("id");
       if (!confirm("確定刪除？")) return;
-      await api((view === "users" ? "/api/users/" : "/api/enquiries/") + id, { method: "DELETE" });
+      await api("/api/enquiries/" + id, { method: "DELETE" });
       document.getElementById("editor").close();
       render();
     });
@@ -251,24 +388,50 @@
       event.preventDefault();
       const form = new FormData(event.target);
       const id = form.get("id");
+      const kind = form.get("kind");
       try {
-        if (view === "users") {
-          const body = { name: form.get("name"), email: form.get("email"), active: form.get("active") === "on" };
+        if (kind === "settings") {
+          userState.includeInactive = form.get("includeInactive") === "on";
+          sessionStorage.setItem("northgo-show-inactive", userState.includeInactive ? "1" : "0");
+          userState.page = 1;
+          document.getElementById("editor").close();
+          return render();
+        }
+        if (kind === "user" || kind === "account") {
+          const body = { name: form.get("name"), username: form.get("username"), email: form.get("email") };
+          if (kind === "user") { body.role = form.get("role"); body.active = form.get("active") === "on"; }
           if (form.get("password")) body.password = form.get("password");
-          await api("/api/users" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+          const path = kind === "account" ? "/api/me" : "/api/users" + (id ? "/" + id : "");
+          const saved = await api(path, { method: id || kind === "account" ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+          if (kind === "account") me = saved;
+        } else if (kind === "menu") {
+          const roles = [];
+          if (form.get("role-admin") === "on") roles.push("admin");
+          if (form.get("role-editor") === "on") roles.push("editor");
+          const body = { label: form.get("label"), parentId: form.get("parentId") || null, viewKey: form.get("viewKey"), sortOrder: Number(form.get("sortOrder")), roles, active: form.get("active") === "on" };
+          await api("/api/menus" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         } else {
           const body = { firstName: form.get("firstName"), lastName: form.get("lastName"), company: form.get("company"), email: form.get("email"), phone: form.get("phone"), country: form.get("country"), message: form.get("message"), notes: form.get("notes"), status: form.get("status"), services: form.getAll("services") };
           await api("/api/enquiries" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         }
         document.getElementById("editor").close();
-        render();
+        if (kind === "menu" || kind === "account") await enter(); else render();
       } catch (error) {
-        alert(error.data && error.data.error === "last_admin" ? "至少要留下一位可登入的管理者。" : "儲存失敗。");
+        alert(messageFor(error));
       }
     });
-    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
+    function messageFor(error) {
+      const code = error.data && error.data.error;
+      if (code === "last_admin") return "至少要留下一位可登入的管理者。";
+      if (code === "self") return "不能刪除自己的帳號。";
+      if (code === "duplicate") return "帳號或電子郵件已存在。";
+      if (code === "children") return "請先刪除這個群組底下的選單。";
+      if (code === "forbidden") return "這個角色不能執行此操作。";
+      return "儲存失敗。";
+    }
+    function escapeHtml(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
     if (token() && API) {
-      api("/api/me").then((data) => { me = data.user; if (data.version) document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = data.version; }); showApp(); }).catch(() => showLogin());
+      api("/api/me").then(async (data) => { me = data.user; if (data.version) document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = data.version; }); await enter(); }).catch(() => showLogin());
     } else if (!API) {
       showLogin("後台 API 尚未連線。GitHub Pages 沒有資料庫，請先部署 Cloudflare Worker。");
     }
