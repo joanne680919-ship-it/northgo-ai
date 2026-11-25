@@ -30,9 +30,9 @@
     .btn.warn { background:#fff4ec; color:#8a3d12; }
     .error { color:#8a3d12; background:#fff4ec; border-radius:12px; padding:.7rem .85rem; margin-top:.8rem; }
     .version { color:var(--muted); font-size:.88rem; margin-top:1.2rem; }
-    .front-link { margin:1rem 0 0; }
-    .front-link a { color:var(--deep); font-weight:750; text-decoration:none; }
-    .front-link a:hover { text-decoration:underline; }
+    aside .front-link { margin:.8rem 0 0; }
+    aside .front-link a { display:block; color:#9fe9e9; font-weight:700; text-decoration:none; border-radius:12px; min-height:44px; padding:.55rem .75rem; }
+    aside .front-link a:hover { background:#13264b; color:#fff; }
     .shell { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
     aside { background:var(--navy); color:#e7f4f8; display:flex; flex-direction:column; padding:1.2rem 1rem; }
     aside .logo { color:#fff; }
@@ -88,7 +88,6 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions"><button class="btn" type="submit">登入</button></div>
-        <p class="front-link"><a href="https://joanne680919-ship-it.github.io/northgo-ai/zh-tw/services/freight-logistics/">前往前台貨運物流</a></p>
         <p class="version">版本 <span data-version>0.1.1</span></p>
       </form>
     </div>
@@ -100,6 +99,7 @@
         <button type="button" data-view="enquiries" aria-current="page">客戶詢問</button>
         <button type="button" data-view="users">使用者管理</button>
       </nav>
+      <p class="front-link"><a href="https://joanne680919-ship-it.github.io/northgo-ai/zh-tw/services/freight-logistics/">前往前台貨運物流</a></p>
       <p class="version">版本 <span data-version>0.1.1</span></p>
       <button class="btn ghost" type="button" id="logout" style="margin-top:.8rem">登出</button>
     </aside>
