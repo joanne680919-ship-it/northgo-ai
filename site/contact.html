@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>詢價｜Northgo</title>
+  <meta name="description" content="把服務、起訖與貨量寄到選定的辦公室信箱。表單不會存進網站。">
+  <link rel="alternate" hreflang="zh-Hant" href="contact.html">
+  <link rel="alternate" hreflang="en" href="en/contact.html">
+  <link rel="stylesheet" href="styles.css">
+  
+  
+</head>
+<body>
+  <a class="skip" href="#main">跳至內容</a>
+  <header class="site-header"><div class="wrap bar">
+    <a class="logo" href="index.html">North<span>go</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">選單</button>
+    <nav id="site-nav">
+    <div class="menu">
+      <button class="menu-btn" type="button" aria-expanded="false">服務</button>
+      <div class="menu-panel"><a href="freight.html">貨運物流</a><a href="project.html">專案物流</a><a href="warehouse.html">倉儲物流</a><a href="shipping.html">船務代理</a></div>
+    </div>
+    <a href="offices.html">據點</a>
+    <a href="scenarios.html">服務情境</a>
+    <a href="about.html">關於</a>
+    <a class="lang" href="en/contact.html" hreflang="en">EN</a>
+    <a class="btn btn-navy" href="contact.html">詢價</a>
+    </nav>
+  </div></header>
+  <main id="main">
+    <div class="wrap">
+      <p class="kicker">Enquiry</p>
+      <h1>詢價</h1>
+      <p class="intro">這張表不會送到網站伺服器。送出後會打開你的電子郵件軟體，收件人是你選的辦公室。請自行寄出。若郵件軟體沒有打開，直接寫信到下方信箱即可。</p>
+      <div class="contact-layout section">
+        <form class="panel" data-enquiry action="mailto:info.tpe@northgo.com" method="post" enctype="text/plain" data-invalid="還有必填欄位是空的。" data-sent="郵件軟體應已打開，收件人是 {email}。請按寄出。若沒有打開，請直接寫信到這個地址。" data-subject="Northgo 詢價">
+          <div class="form-grid"><label class="">姓名<input type="text" name="name" data-label="姓名" required><span class="field-error" hidden>請填這欄</span></label><label class="">公司<input type="text" name="company" data-label="公司"></label><label class="">Email<input type="email" name="email" data-label="Email" required><span class="field-error" hidden>請填這欄</span></label><label class="">電話<input type="text" name="phone" data-label="電話"></label><label class="">國家或地區<input type="text" name="country" data-label="國家或地區"></label><label class="">服務<select name="service" data-label="服務" required><option value="">請填這欄</option><option value="freight">貨運物流</option><option value="project">專案物流</option><option value="warehouse">倉儲物流</option><option value="shipping">船務代理</option><option value="unsure">還不確定</option></select><span class="field-error" hidden>請填這欄</span></label><label class="">起運地<input type="text" name="origin" data-label="起運地" required placeholder="城市、港口或工廠"><span class="field-error" hidden>請填這欄</span></label><label class="">目的地<input type="text" name="destination" data-label="目的地" required placeholder="城市、港口或倉庫"><span class="field-error" hidden>請填這欄</span></label><label class="span-2">貨量與尺寸<input type="text" name="cargo" data-label="貨量與尺寸" required placeholder="件數、毛重、尺寸或櫃型"><span class="field-error" hidden>請填這欄</span></label><label class="span-2">其他說明<textarea name="message" data-label="其他說明" placeholder="貿易條件、希望時程、參考號"></textarea></label><label class="span-2">辦公室<select name="office" data-label="辦公室"><option value="tpe" data-email="info.tpe@northgo.com">台北總部 · info.tpe@northgo.com</option><option value="txg" data-email="info.txg@northgo.com">台中 · info.txg@northgo.com</option><option value="khh" data-email="info.khh@northgo.com">高雄 · info.khh@northgo.com</option><option value="tyo" data-email="info.tyo@northgo.com">東京 · info.tyo@northgo.com</option><option value="osa" data-email="info.osa@northgo.com">大阪 · info.osa@northgo.com</option><option value="sgn" data-email="info.hcmc@northgo.com">胡志明市 · info.hcmc@northgo.com</option><option value="lax" data-email="info.lax@northgo.com">洛杉磯 · info.lax@northgo.com</option></select></label>
+            <div class="span-2"><button class="btn btn-navy" type="submit">用電子郵件送出</button></div>
+            <p class="span-2 muted" id="form-status" role="status">收件人：<span id="office-mail">info.tpe@northgo.com</span></p>
+          </div>
+        </form>
+        <aside class="panel"><h2>七個信箱</h2><p><strong>台北總部</strong><br><a href="mailto:info.tpe@northgo.com">info.tpe@northgo.com</a></p><p><strong>台中</strong><br><a href="mailto:info.txg@northgo.com">info.txg@northgo.com</a></p><p><strong>高雄</strong><br><a href="mailto:info.khh@northgo.com">info.khh@northgo.com</a></p><p><strong>東京</strong><br><a href="mailto:info.tyo@northgo.com">info.tyo@northgo.com</a></p><p><strong>大阪</strong><br><a href="mailto:info.osa@northgo.com">info.osa@northgo.com</a></p><p><strong>胡志明市</strong><br><a href="mailto:info.hcmc@northgo.com">info.hcmc@northgo.com</a></p><p><strong>洛杉磯</strong><br><a href="mailto:info.lax@northgo.com">info.lax@northgo.com</a></p></aside>
+      </div>
+    </div>
+    </main>
+  <footer><div class="wrap foot">
+    <nav>
+      <a href="legal.html#privacy">隱私</a>
+      <a href="legal.html#terms">條款</a>
+      <a href="legal.html#cookies">Cookie</a>
+      <a href="legal.html#disclaimer">聲明</a>
+      <a href="https://www.northgo.com/">www.northgo.com</a>
+    </nav>
+    <p>預覽站，依 2026-11-25 公開官網改寫。正式網站與具約束力的條款仍以 www.northgo.com 為準。本站沒有線上追蹤、運價或庫存系統。</p>
+  </div></footer>
+  
+  <script src="site.js"></script>
+</body>
+</html>

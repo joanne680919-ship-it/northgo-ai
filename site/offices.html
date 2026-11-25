@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全球辦公室｜Northgo</title>
+  <meta name="description" content="台北、台中、高雄、東京、大阪、胡志明市與洛杉磯的地址、電話與信箱。">
+  <link rel="alternate" hreflang="zh-Hant" href="offices.html">
+  <link rel="alternate" hreflang="en" href="en/offices.html">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  
+</head>
+<body>
+  <a class="skip" href="#main">跳至內容</a>
+  <header class="site-header"><div class="wrap bar">
+    <a class="logo" href="index.html">North<span>go</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">選單</button>
+    <nav id="site-nav">
+    <div class="menu">
+      <button class="menu-btn" type="button" aria-expanded="false">服務</button>
+      <div class="menu-panel"><a href="freight.html">貨運物流</a><a href="project.html">專案物流</a><a href="warehouse.html">倉儲物流</a><a href="shipping.html">船務代理</a></div>
+    </div>
+    <a href="offices.html" aria-current="page">據點</a>
+    <a href="scenarios.html">服務情境</a>
+    <a href="about.html">關於</a>
+    <a class="lang" href="en/offices.html" hreflang="en">EN</a>
+    <a class="btn btn-navy" href="contact.html">詢價</a>
+    </nav>
+  </div></header>
+  <main id="main">
+    <div class="wrap">
+      <p class="kicker">Locations</p><h1>七個辦公室</h1>
+        <p class="intro">地址、電話與信箱整理自公開聯絡頁。全球視角把洛杉磯放在太平洋同一側，才能和亞洲一起看見；點區域之後用實際經度。右下角是台灣三個辦公室。</p>
+      <div class="map-layout section">
+        <div>
+          <div class="regions" style="margin-bottom:10px"><button type="button" data-region="world" aria-pressed="true">全球</button><button type="button" data-region="east" aria-pressed="false">東亞</button><button type="button" data-region="taiwan" aria-pressed="false">台灣</button><button type="button" data-region="japan" aria-pressed="false">日本</button><button type="button" data-region="sea" aria-pressed="false">東南亞</button><button type="button" data-region="na" aria-pressed="false">北美</button></div>
+          <div class="stage"><div id="map" role="region" aria-label="台灣辦公室放大"></div><div id="inset" aria-label="台灣辦公室放大"></div></div>
+          <p class="muted" style="margin-top:8px">地圖圖磚來自 OpenStreetMap。點列表上的辦公室會拉近並打開地址。</p>
+        </div>
+        <div class="cards"><article class="card office-card" id="tpe"><h3>台北總部</h3><p>台北市民生東路三段 10 號 7 樓，104511</p><p class="muted">7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan</p><p><a href="tel:+886-2-2531-8677">+886-2-2531-8677</a><br>Fax +886-2-2531-8577<br><a href="mailto:info.tpe@northgo.com">info.tpe@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="tpe" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="txg"><h3>台中</h3><p>台中市中橫十一路 4 號，435058</p><p class="muted">No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan</p><p><a href="tel:+886-4-2326-2580">+886-4-2326-2580</a><br>Fax +886-4-2326-0308<br><a href="mailto:info.txg@northgo.com">info.txg@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="txg" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="khh"><h3>高雄</h3><p>高雄市海邊路 31 號 19 樓之 2，802609</p><p class="muted">19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan</p><p><a href="tel:+886-7-335-0730">+886-7-335-0730</a><br>Fax +886-7-336-4536<br><a href="mailto:info.khh@northgo.com">info.khh@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="khh" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="tyo"><h3>東京</h3><p>東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓，104-0041</p><p class="muted">6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan</p><p><a href="tel:+81-3-6260-3944">+81-3-6260-3944</a><br>Fax +81-3-6260-3945<br><a href="mailto:info.tyo@northgo.com">info.tyo@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="tyo" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="osa"><h3>大阪</h3><p>大阪市北區曾根崎新地 2-6-23 MF Sakura-Bashi Build 3 樓，530-0002</p><p class="muted">3F, MF Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan</p><p><a href="tel:+81-6-6676-8395">+81-6-6676-8395</a><br>Fax +81-6-6676-8397<br><a href="mailto:info.osa@northgo.com">info.osa@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="osa" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="sgn"><h3>胡志明市</h3><p>胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓</p><p class="muted">5F, 92D Nguyen Huu Canh, Ward 22, Binh Thanh, Ho Chi Minh City, Vietnam</p><p><a href="tel:+84-28-9995-7368">+84-28-9995-7368</a><br><a href="mailto:info.hcmc@northgo.com">info.hcmc@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="sgn" style="margin-top:8px">在地圖上打開</button></article><article class="card office-card" id="lax"><h3>洛杉磯</h3><p>119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA</p><p class="muted">119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA</p><p><a href="tel:+1-714-853-1088">+1-714-853-1088</a><br><a href="mailto:info.lax@northgo.com">info.lax@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="lax" style="margin-top:8px">在地圖上打開</button></article></div>
+      </div>
+    </div>
+    <script type="application/json" id="office-data">[{"id": "tpe", "region": "taiwan", "hq": true, "lat": 25.05816, "lng": 121.54523, "name": "台北總部", "short": "台北", "address": "台北市民生東路三段 10 號 7 樓，104511", "addressEn": "7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan", "phone": "+886-2-2531-8677", "fax": "+886-2-2531-8577", "email": "info.tpe@northgo.com"}, {"id": "txg", "region": "taiwan", "hq": false, "lat": 24.27138, "lng": 120.53068, "name": "台中", "short": "台中", "address": "台中市中橫十一路 4 號，435058", "addressEn": "No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan", "phone": "+886-4-2326-2580", "fax": "+886-4-2326-0308", "email": "info.txg@northgo.com"}, {"id": "khh", "region": "taiwan", "hq": false, "lat": 22.61976, "lng": 120.29169, "name": "高雄", "short": "高雄", "address": "高雄市海邊路 31 號 19 樓之 2，802609", "addressEn": "19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan", "phone": "+886-7-335-0730", "fax": "+886-7-336-4536", "email": "info.khh@northgo.com"}, {"id": "tyo", "region": "japan", "hq": false, "lat": 35.67242, "lng": 139.77414, "name": "東京", "short": "東京", "address": "東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓，104-0041", "addressEn": "6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan", "phone": "+81-3-6260-3944", "fax": "+81-3-6260-3945", "email": "info.tyo@northgo.com"}, {"id": "osa", "region": "japan", "hq": false, "lat": 34.69731, "lng": 135.49874, "name": "大阪", "short": "大阪", "address": "大阪市北區曾根崎新地 2-6-23 MF Sakura-Bashi Build 3 樓，530-0002", "addressEn": "3F, MF Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan", "phone": "+81-6-6676-8395", "fax": "+81-6-6676-8397", "email": "info.osa@northgo.com"}, {"id": "sgn", "region": "sea", "hq": false, "lat": 10.7927, "lng": 106.7168, "name": "胡志明市", "short": "胡志明市", "address": "胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓", "addressEn": "5F, 92D Nguyen Huu Canh, Ward 22, Binh Thanh, Ho Chi Minh City, Vietnam", "phone": "+84-28-9995-7368", "fax": "", "email": "info.hcmc@northgo.com"}, {"id": "lax", "region": "na", "hq": false, "lat": 34.06221, "lng": -118.13431, "name": "洛杉磯", "short": "洛杉磯", "address": "119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA", "addressEn": "119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA", "phone": "+1-714-853-1088", "fax": "", "email": "info.lax@northgo.com"}]</script>
+    </main>
+  <footer><div class="wrap foot">
+    <nav>
+      <a href="legal.html#privacy">隱私</a>
+      <a href="legal.html#terms">條款</a>
+      <a href="legal.html#cookies">Cookie</a>
+      <a href="legal.html#disclaimer">聲明</a>
+      <a href="https://www.northgo.com/">www.northgo.com</a>
+    </nav>
+    <p>預覽站，依 2026-11-25 公開官網改寫。正式網站與具約束力的條款仍以 www.northgo.com 為準。本站沒有線上追蹤、運價或庫存系統。</p>
+  </div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="site.js"></script>
+</body>
+</html>

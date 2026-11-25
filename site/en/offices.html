@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offices | Northgo</title>
+  <meta name="description" content="Addresses, phones, and mailboxes in Taipei, Taichung, Kaohsiung, Tokyo, Osaka, Ho Chi Minh City, and Los Angeles.">
+  <link rel="alternate" hreflang="zh-Hant" href="../offices.html">
+  <link rel="alternate" hreflang="en" href="offices.html">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header"><div class="wrap bar">
+    <a class="logo" href="index.html">North<span>go</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav">
+    <div class="menu">
+      <button class="menu-btn" type="button" aria-expanded="false">Services</button>
+      <div class="menu-panel"><a href="freight.html">Freight</a><a href="project.html">Project cargo</a><a href="warehouse.html">Warehousing</a><a href="shipping.html">Shipping agency</a></div>
+    </div>
+    <a href="offices.html" aria-current="page">Offices</a>
+    <a href="scenarios.html">Scenarios</a>
+    <a href="about.html">About</a>
+    <a class="lang" href="../offices.html" hreflang="zh-Hant">繁中</a>
+    <a class="btn btn-navy" href="contact.html">Enquire</a>
+    </nav>
+  </div></header>
+  <main id="main">
+    <div class="wrap">
+      <p class="kicker">Locations</p><h1>Seven offices</h1>
+        <p class="intro">Addresses, phones, and mailboxes come from the public contact page. The world view places Los Angeles on the Pacific side so it sits with Asia; regional views use the real longitude. The corner map is the three Taiwan offices.</p>
+      <div class="map-layout section">
+        <div>
+          <div class="regions" style="margin-bottom:10px"><button type="button" data-region="world" aria-pressed="true">World</button><button type="button" data-region="east" aria-pressed="false">East Asia</button><button type="button" data-region="taiwan" aria-pressed="false">Taiwan</button><button type="button" data-region="japan" aria-pressed="false">Japan</button><button type="button" data-region="sea" aria-pressed="false">Southeast Asia</button><button type="button" data-region="na" aria-pressed="false">North America</button></div>
+          <div class="stage"><div id="map" role="region" aria-label="Taiwan offices"></div><div id="inset" aria-label="Taiwan offices"></div></div>
+          <p class="muted" style="margin-top:8px">Tiles from OpenStreetMap. Choose an office in the list to zoom in and open the address.</p>
+        </div>
+        <div class="cards"><article class="card office-card" id="tpe"><h3>Taipei HQ</h3><p>7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan</p><p class="muted">台北市民生東路三段 10 號 7 樓，104511</p><p><a href="tel:+886-2-2531-8677">+886-2-2531-8677</a><br>Fax +886-2-2531-8577<br><a href="mailto:info.tpe@northgo.com">info.tpe@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="tpe" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="txg"><h3>Taichung</h3><p>No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan</p><p class="muted">台中市中橫十一路 4 號，435058</p><p><a href="tel:+886-4-2326-2580">+886-4-2326-2580</a><br>Fax +886-4-2326-0308<br><a href="mailto:info.txg@northgo.com">info.txg@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="txg" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="khh"><h3>Kaohsiung</h3><p>19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan</p><p class="muted">高雄市海邊路 31 號 19 樓之 2，802609</p><p><a href="tel:+886-7-335-0730">+886-7-335-0730</a><br>Fax +886-7-336-4536<br><a href="mailto:info.khh@northgo.com">info.khh@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="khh" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="tyo"><h3>Tokyo</h3><p>6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan</p><p class="muted">東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓，104-0041</p><p><a href="tel:+81-3-6260-3944">+81-3-6260-3944</a><br>Fax +81-3-6260-3945<br><a href="mailto:info.tyo@northgo.com">info.tyo@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="tyo" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="osa"><h3>Osaka</h3><p>3F, MF Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan</p><p class="muted">大阪市北區曾根崎新地 2-6-23 MF Sakura-Bashi Build 3 樓，530-0002</p><p><a href="tel:+81-6-6676-8395">+81-6-6676-8395</a><br>Fax +81-6-6676-8397<br><a href="mailto:info.osa@northgo.com">info.osa@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="osa" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="sgn"><h3>Ho Chi Minh City</h3><p>5F, 92D Nguyen Huu Canh, Ward 22, Binh Thanh, Ho Chi Minh City, Vietnam</p><p class="muted">胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓</p><p><a href="tel:+84-28-9995-7368">+84-28-9995-7368</a><br><a href="mailto:info.hcmc@northgo.com">info.hcmc@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="sgn" style="margin-top:8px">Show on the map</button></article><article class="card office-card" id="lax"><h3>Los Angeles</h3><p>119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA</p><p class="muted">119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA</p><p><a href="tel:+1-714-853-1088">+1-714-853-1088</a><br><a href="mailto:info.lax@northgo.com">info.lax@northgo.com</a></p><button type="button" class="btn btn-secondary" data-office="lax" style="margin-top:8px">Show on the map</button></article></div>
+      </div>
+    </div>
+    <script type="application/json" id="office-data">[{"id": "tpe", "region": "taiwan", "hq": true, "lat": 25.05816, "lng": 121.54523, "name": "Taipei HQ", "short": "Taipei", "address": "7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan", "addressEn": "台北市民生東路三段 10 號 7 樓，104511", "phone": "+886-2-2531-8677", "fax": "+886-2-2531-8577", "email": "info.tpe@northgo.com"}, {"id": "txg", "region": "taiwan", "hq": false, "lat": 24.27138, "lng": 120.53068, "name": "Taichung", "short": "Taichung", "address": "No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan", "addressEn": "台中市中橫十一路 4 號，435058", "phone": "+886-4-2326-2580", "fax": "+886-4-2326-0308", "email": "info.txg@northgo.com"}, {"id": "khh", "region": "taiwan", "hq": false, "lat": 22.61976, "lng": 120.29169, "name": "Kaohsiung", "short": "Kaohsiung", "address": "19F-2, No. 31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan", "addressEn": "高雄市海邊路 31 號 19 樓之 2，802609", "phone": "+886-7-335-0730", "fax": "+886-7-336-4536", "email": "info.khh@northgo.com"}, {"id": "tyo", "region": "japan", "hq": false, "lat": 35.67242, "lng": 139.77414, "name": "Tokyo", "short": "Tokyo", "address": "6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo 104-0041, Japan", "addressEn": "東京都中央區新富 1-5-1 Gran+Ginza-East 6 樓，104-0041", "phone": "+81-3-6260-3944", "fax": "+81-3-6260-3945", "email": "info.tyo@northgo.com"}, {"id": "osa", "region": "japan", "hq": false, "lat": 34.69731, "lng": 135.49874, "name": "Osaka", "short": "Osaka", "address": "3F, MF Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka 530-0002, Japan", "addressEn": "大阪市北區曾根崎新地 2-6-23 MF Sakura-Bashi Build 3 樓，530-0002", "phone": "+81-6-6676-8395", "fax": "+81-6-6676-8397", "email": "info.osa@northgo.com"}, {"id": "sgn", "region": "sea", "hq": false, "lat": 10.7927, "lng": 106.7168, "name": "Ho Chi Minh City", "short": "Ho Chi Minh City", "address": "5F, 92D Nguyen Huu Canh, Ward 22, Binh Thanh, Ho Chi Minh City, Vietnam", "addressEn": "胡志明市平盛郡第 22 坊阮友敬路 92D 號 5 樓", "phone": "+84-28-9995-7368", "fax": "", "email": "info.hcmc@northgo.com"}, {"id": "lax", "region": "na", "hq": false, "lat": 34.06221, "lng": -118.13431, "name": "Los Angeles", "short": "Los Angeles", "address": "119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA", "addressEn": "119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA", "phone": "+1-714-853-1088", "fax": "", "email": "info.lax@northgo.com"}]</script>
+    </main>
+  <footer><div class="wrap foot">
+    <nav>
+      <a href="legal.html#privacy">Privacy</a>
+      <a href="legal.html#terms">Terms</a>
+      <a href="legal.html#cookies">Cookies</a>
+      <a href="legal.html#disclaimer">Disclaimer</a>
+      <a href="https://www.northgo.com/">www.northgo.com</a>
+    </nav>
+    <p>Preview built from the public site as of 2026-11-25. The live site and its binding terms remain at www.northgo.com. This preview has no tracking, rate, or inventory system.</p>
+  </div></footer>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../site.js"></script>
+</body>
+</html>

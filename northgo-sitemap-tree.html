@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Northgo（northgo.com）精簡樹狀網站地圖 v1.0.3。切換語系會改寫名稱與連結。">
+  <meta name="version" content="1.0.3">
+  <title>Northgo 網站地圖（樹狀）</title>
+  <style>
+    :root { --navy:#0a1b33; --cyan:#00e5e5; --ink:#0a1b33; --muted:#5c6b7a; --line:#d5e2ea; --bg:#f3f7f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font-family:"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; line-height:1.45; }
+    a { color:inherit; }
+    header { background:radial-gradient(circle at 90% 0%, rgba(0,229,229,.22), transparent 28%), linear-gradient(160deg,#071526,#0a1b33 60%,#0e3358); color:#fff; padding:22px 0 20px; }
+    .wrap { width:min(760px, calc(100% - 28px)); margin:0 auto; }
+    .brand { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+    .logo { font-weight:750; letter-spacing:-.04em; font-size:1.3rem; }
+    .logo span { color:var(--cyan); }
+    .brand a { color:var(--cyan); font-size:.88rem; }
+    h1 { margin:12px 0 4px; font-size:clamp(1.6rem,4vw,2.1rem); letter-spacing:-.04em; }
+    .lede { margin:0; color:rgba(255,255,255,.8); }
+    .locales { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .locales button { border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#fff; border-radius:999px; padding:7px 12px; font:inherit; cursor:pointer; }
+    .locales button[aria-pressed="true"] { background:var(--cyan); color:var(--navy); border-color:var(--cyan); font-weight:700; }
+    button:focus-visible, a:focus-visible { outline:3px solid var(--cyan); outline-offset:2px; }
+    main { padding:18px 0 36px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:8px 8px 16px 4px; box-shadow:0 10px 28px rgba(10,27,51,.06); }
+    .tree, .tree ul { list-style:none; margin:0; padding:0; }
+    .tree ul { margin-left:14px; padding-left:14px; border-left:1px solid var(--line); }
+    .tree li { position:relative; }
+    .tree li::before { content:""; position:absolute; left:-14px; top:1.05rem; width:14px; border-top:1px solid var(--line); }
+    .tree > li::before { display:none; }
+    .item { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; text-decoration:none; padding:7px 8px; border-radius:10px; }
+    a.item:hover { background:#f3fbfb; }
+    a.item:hover .name { color:#067f88; }
+    .name { font-weight:680; }
+    .path { font-family:ui-monospace,Consolas,monospace; font-size:.75rem; color:var(--muted); word-break:break-all; }
+    .badge { border-radius:999px; padding:0 7px; font-size:.68rem; font-weight:700; background:#eef3f8; color:#34506b; }
+    .badge.bad { background:#fff4ec; color:#9a3412; }
+    .root > .item .name { font-size:1.05rem; }
+    footer { color:var(--muted); font-size:.82rem; padding-bottom:22px; }
+    @media (max-width:640px) {
+      .brand { flex-direction:column; gap:4px; }
+      .tree ul { margin-left:10px; padding-left:10px; }
+      .tree li::before { left:-10px; width:10px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo">North<span>GO</span></div>
+        <a href="northgo-sitemap.html" data-i18n="fullLink">完整網站地圖</a>
+      </div>
+      <h1 data-i18n="title">網站地圖</h1>
+      <p class="lede" data-i18n="lede">精簡樹狀結構。切換語系會改寫名稱與連結。</p>
+      <div class="locales" role="group" aria-label="語系">
+        <button type="button" data-locale="zh-tw" aria-pressed="true">繁體中文</button>
+        <button type="button" data-locale="en" aria-pressed="false">English</button>
+        <button type="button" data-locale="ja" aria-pressed="false">日本語</button>
+        <button type="button" data-locale="vi" aria-pressed="false">Tiếng Việt</button>
+      </div>
+    </div>
+  </header>
+  <main class="wrap"><div class="card" id="tree"></div></main>
+  <footer><div class="wrap"><span data-i18n="foot">只列出已確認的頁面與錨點。News 在四個語系都是 404。</span> · v1.0.3</div></footer>
+  <script src="sitemap-data.js"></script>
+  <script>
+    const nodes = [
+      { key: "home", path: "/", children: [
+        { key: "servicesBlock", path: "/#our-services", anchor: true },
+        { key: "why", path: "/#why-northgo", anchor: true }
+      ]},
+      { key: "services", children: [
+        { key: "freight", path: "/services/freight-logistics", children: [
+          { key: "ocean", path: "/services/freight-logistics#ocean-freight", anchor: true },
+          { key: "air", path: "/services/freight-logistics#air-freight", anchor: true },
+          { key: "land", path: "/services/freight-logistics#land-transport", anchor: true },
+          { key: "customs", path: "/services/freight-logistics#customs-clearance", anchor: true }
+        ]},
+        { key: "project", path: "/services/project-logistics" },
+        { key: "warehouse", path: "/services/warehouse-logistics" },
+        { key: "shipping", path: "/services/shipping-agency" }
+      ]},
+      { key: "about", path: "/about" },
+      { key: "contact", path: "/contact", children: [
+        { key: "enquire", path: "/contact#enquiry-form", anchor: true },
+        { key: "offices", path: "/contact#locations", anchor: true, children: [
+          { key: "tpe" }, { key: "txg" }, { key: "khh" }, { key: "tyo" }, { key: "osa" }, { key: "sgn" }, { key: "lax" }
+        ]}
+      ]},
+      { key: "legal", children: [
+        { key: "privacy", path: "/legal/privacy-policy" },
+        { key: "terms", path: "/legal/terms" },
+        { key: "cookie", path: "/legal/cookie-policy" },
+        { key: "disclaimer", path: "/legal/disclaimer" }
+      ]},
+      { key: "news", path: "/news", bad: true }
+    ];
+    const prefixes = { en:"", "zh-tw":"/zh-tw", ja:"/ja", vi:"/vi" };
+    const htmlLang = { en:"en", "zh-tw":"zh-Hant", ja:"ja", vi:"vi" };
+    function routeFor(path, locale) {
+      const prefix = prefixes[locale];
+      if (path === "/") return prefix || "/";
+      if (path.startsWith("/#")) return (prefix || "/") + path.slice(1);
+      return prefix + path;
+    }
+    function renderItem(node, locale, text) {
+      const row = document.createElement(node.path ? "a" : "div");
+      row.className = "item";
+      if (node.path) row.href = "https://www.northgo.com" + routeFor(node.path, locale);
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = text[node.key];
+      row.appendChild(name);
+      if (node.path) {
+        const path = document.createElement("span");
+        path.className = "path";
+        path.textContent = routeFor(node.path, locale);
+        row.appendChild(path);
+      }
+      if (node.anchor || node.bad) {
+        const badge = document.createElement("span");
+        badge.className = "badge" + (node.bad ? " bad" : "");
+        badge.textContent = node.bad ? text.missing : text.anchor;
+        row.appendChild(badge);
+      }
+      return row;
+    }
+    function renderNodes(list, locale, text) {
+      const ul = document.createElement("ul");
+      list.forEach((node) => {
+        const li = document.createElement("li");
+        li.appendChild(renderItem(node, locale, text));
+        if (node.children) li.appendChild(renderNodes(node.children, locale, text));
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    function apply(locale) {
+      const text = SITEMAP_COPY[locale];
+      document.documentElement.lang = htmlLang[locale];
+      document.title = text.pageTitleTree;
+      document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = text[el.dataset.i18n]; });
+      document.querySelectorAll("[data-locale]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.locale === locale));
+      });
+      const tree = renderNodes([{ key:"root", path:"/", children:nodes }], locale, text);
+      tree.className = "tree";
+      tree.firstElementChild.classList.add("root");
+      document.getElementById("tree").replaceChildren(tree);
+    }
+    document.querySelectorAll("[data-locale]").forEach((button) => {
+      button.addEventListener("click", () => apply(button.dataset.locale));
+    });
+    apply("zh-tw");
+  </script>
+</body>
+</html>

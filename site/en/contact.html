@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enquire | Northgo</title>
+  <meta name="description" content="Send the service, lane, and quantity to the office you choose. The form is not stored on the site.">
+  <link rel="alternate" hreflang="zh-Hant" href="../contact.html">
+  <link rel="alternate" hreflang="en" href="contact.html">
+  <link rel="stylesheet" href="../styles.css">
+  
+  
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header"><div class="wrap bar">
+    <a class="logo" href="index.html">North<span>go</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <nav id="site-nav">
+    <div class="menu">
+      <button class="menu-btn" type="button" aria-expanded="false">Services</button>
+      <div class="menu-panel"><a href="freight.html">Freight</a><a href="project.html">Project cargo</a><a href="warehouse.html">Warehousing</a><a href="shipping.html">Shipping agency</a></div>
+    </div>
+    <a href="offices.html">Offices</a>
+    <a href="scenarios.html">Scenarios</a>
+    <a href="about.html">About</a>
+    <a class="lang" href="../contact.html" hreflang="zh-Hant">繁中</a>
+    <a class="btn btn-navy" href="contact.html">Enquire</a>
+    </nav>
+  </div></header>
+  <main id="main">
+    <div class="wrap">
+      <p class="kicker">Enquiry</p>
+      <h1>Enquire</h1>
+      <p class="intro">This form is not posted to a server. Submit opens your email app, addressed to the office you chose. You still send the message. If no app opens, write to the address below.</p>
+      <div class="contact-layout section">
+        <form class="panel" data-enquiry action="mailto:info.tpe@northgo.com" method="post" enctype="text/plain" data-invalid="A required field is empty." data-sent="Your email app should be open to {email}. Send it from there. If nothing opened, write to that address." data-subject="Northgo enquiry">
+          <div class="form-grid"><label class="">Name<input type="text" name="name" data-label="Name" required><span class="field-error" hidden>Required</span></label><label class="">Company<input type="text" name="company" data-label="Company"></label><label class="">Email<input type="email" name="email" data-label="Email" required><span class="field-error" hidden>Required</span></label><label class="">Phone<input type="text" name="phone" data-label="Phone"></label><label class="">Country or region<input type="text" name="country" data-label="Country or region"></label><label class="">Service<select name="service" data-label="Service" required><option value="">Required</option><option value="freight">Freight</option><option value="project">Project cargo</option><option value="warehouse">Warehousing</option><option value="shipping">Shipping agency</option><option value="unsure">Not sure yet</option></select><span class="field-error" hidden>Required</span></label><label class="">Origin<input type="text" name="origin" data-label="Origin" required placeholder="City, port, or plant"><span class="field-error" hidden>Required</span></label><label class="">Destination<input type="text" name="destination" data-label="Destination" required placeholder="City, port, or warehouse"><span class="field-error" hidden>Required</span></label><label class="span-2">Quantity and size<input type="text" name="cargo" data-label="Quantity and size" required placeholder="Pieces, gross weight, size, or container"><span class="field-error" hidden>Required</span></label><label class="span-2">Anything else<textarea name="message" data-label="Anything else" placeholder="Incoterms, timing, reference"></textarea></label><label class="span-2">Office<select name="office" data-label="Office"><option value="tpe" data-email="info.tpe@northgo.com">Taipei HQ · info.tpe@northgo.com</option><option value="txg" data-email="info.txg@northgo.com">Taichung · info.txg@northgo.com</option><option value="khh" data-email="info.khh@northgo.com">Kaohsiung · info.khh@northgo.com</option><option value="tyo" data-email="info.tyo@northgo.com">Tokyo · info.tyo@northgo.com</option><option value="osa" data-email="info.osa@northgo.com">Osaka · info.osa@northgo.com</option><option value="sgn" data-email="info.hcmc@northgo.com">Ho Chi Minh City · info.hcmc@northgo.com</option><option value="lax" data-email="info.lax@northgo.com">Los Angeles · info.lax@northgo.com</option></select></label>
+            <div class="span-2"><button class="btn btn-navy" type="submit">Open email</button></div>
+            <p class="span-2 muted" id="form-status" role="status">To: <span id="office-mail">info.tpe@northgo.com</span></p>
+          </div>
+        </form>
+        <aside class="panel"><h2>Seven addresses</h2><p><strong>Taipei HQ</strong><br><a href="mailto:info.tpe@northgo.com">info.tpe@northgo.com</a></p><p><strong>Taichung</strong><br><a href="mailto:info.txg@northgo.com">info.txg@northgo.com</a></p><p><strong>Kaohsiung</strong><br><a href="mailto:info.khh@northgo.com">info.khh@northgo.com</a></p><p><strong>Tokyo</strong><br><a href="mailto:info.tyo@northgo.com">info.tyo@northgo.com</a></p><p><strong>Osaka</strong><br><a href="mailto:info.osa@northgo.com">info.osa@northgo.com</a></p><p><strong>Ho Chi Minh City</strong><br><a href="mailto:info.hcmc@northgo.com">info.hcmc@northgo.com</a></p><p><strong>Los Angeles</strong><br><a href="mailto:info.lax@northgo.com">info.lax@northgo.com</a></p></aside>
+      </div>
+    </div>
+    </main>
+  <footer><div class="wrap foot">
+    <nav>
+      <a href="legal.html#privacy">Privacy</a>
+      <a href="legal.html#terms">Terms</a>
+      <a href="legal.html#cookies">Cookies</a>
+      <a href="legal.html#disclaimer">Disclaimer</a>
+      <a href="https://www.northgo.com/">www.northgo.com</a>
+    </nav>
+    <p>Preview built from the public site as of 2026-11-25. The live site and its binding terms remain at www.northgo.com. This preview has no tracking, rate, or inventory system.</p>
+  </div></footer>
+  
+  <script src="../site.js"></script>
+</body>
+</html>

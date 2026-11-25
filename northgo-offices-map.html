@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northgo 全球辦公室</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root { --navy:#0a1b33; --cyan:#00e5e5; --ink:#0a1b33; --muted:#5c6b7a; --line:#d7e3ec; --bg:#f3f7f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); font-family:"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif; }
+    a { color:#086972; }
+    header { background:linear-gradient(160deg,#071526,#0a1b33 60%,#0e3358); color:#fff; padding:22px 0 18px; }
+    .wrap { width:min(1180px, calc(100% - 28px)); margin:0 auto; }
+    .brand { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+    .logo { font-weight:750; letter-spacing:-.04em; font-size:1.35rem; }
+    .logo span { color:var(--cyan); }
+    .brand a { color:var(--cyan); font-size:.88rem; }
+    h1 { margin:10px 0 4px; font-size:clamp(1.6rem,4vw,2.2rem); letter-spacing:-.04em; }
+    .lede { margin:0; color:rgba(255,255,255,.82); }
+    .regions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .regions button, .office-btn { border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06); color:#fff; border-radius:999px; padding:7px 12px; font:inherit; cursor:pointer; }
+    .regions button[aria-pressed="true"] { background:var(--cyan); color:var(--navy); border-color:var(--cyan); font-weight:700; }
+    main { padding:16px 0 36px; }
+    .layout { display:grid; gap:14px; }
+    .stage { position:relative; background:#fff; border:1px solid var(--line); border-radius:18px; overflow:hidden; min-height:520px; }
+    #map { height:560px; background:#d7e6ea; }
+    #inset { position:absolute; z-index:500; right:12px; bottom:28px; width:min(240px, 46%); height:180px; border:2px solid #fff; border-radius:12px; box-shadow:0 8px 24px rgba(10,27,51,.25); overflow:hidden; }
+    #inset[hidden] { display:none; }
+    .pin { width:16px; height:16px; margin-left:-8px; margin-top:-8px; border-radius:50%; background:var(--cyan); border:2px solid var(--navy); box-shadow:0 0 0 4px rgba(0,229,229,.25); }
+    .pin.hq { width:20px; height:20px; margin-left:-10px; margin-top:-10px; }
+    .leaflet-popup-content { margin:10px 12px; }
+    .popup h2 { margin:0 0 4px; font-size:1rem; }
+    .popup p { margin:0 0 6px; color:var(--muted); font-size:.86rem; }
+    .side { background:#fff; border:1px solid var(--line); border-radius:18px; padding:8px 14px 16px; }
+    .side h2 { margin:14px 0 6px; font-size:.95rem; }
+    .office-btn { display:block; width:100%; text-align:left; color:var(--ink); background:#f7fafb; border:1px solid var(--line); border-radius:12px; margin:0 0 8px; }
+    .office-btn small { display:block; color:var(--muted); font-weight:400; }
+    @media (min-width:900px) { .layout { grid-template-columns:minmax(0,1fr) 280px; } }
+    @media (max-width:699px) { #map { height:420px; } .stage { min-height:420px; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <div class="brand"><div class="logo">North<span>GO</span></div><a href="northgo-sitemap.html">網站地圖</a></div>
+    <h1>全球辦公室</h1>
+    <p class="lede">七個據點一次標在地圖上。點區域可拉近，點辦公室可看地址與聯絡方式。</p>
+    <div class="regions" role="group" aria-label="區域">
+      <button type="button" data-region="world" aria-pressed="true">全球</button>
+      <button type="button" data-region="east">東亞</button>
+      <button type="button" data-region="taiwan">台灣</button>
+      <button type="button" data-region="japan">日本</button>
+      <button type="button" data-region="sea">東南亞</button>
+      <button type="button" data-region="na">北美</button>
+    </div>
+  </div></header>
+  <main class="wrap"><div class="layout">
+    <div class="stage">
+      <div id="map" role="region" aria-label="全球辦公室地圖"></div>
+      <div id="inset" aria-label="台灣辦公室放大"></div>
+    </div>
+    <aside class="side" aria-label="辦公室列表" id="list"></aside>
+  </div></main>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const offices = [
+      { id:"tpe", region:"taiwan", group:"台灣", hq:true, lat:25.05816, lng:121.54523, name:"台北辦公室", en:"Taipei Office", address:"7F., No. 10, Sec. 3, Minsheng E. Rd., Taipei City 104511, Taiwan", phone:"+886-2-2531-8677", email:"info.tpe@northgo.com" },
+      { id:"txg", region:"taiwan", group:"台灣", lat:24.27138, lng:120.53068, name:"台中辦公室", en:"Taichung Office", address:"No. 4, Zhongheng 11th Rd., Taichung City 435058, Taiwan", phone:"+886-4-2326-2580", email:"info.txg@northgo.com" },
+      { id:"khh", region:"taiwan", group:"台灣", lat:22.61976, lng:120.29169, name:"高雄辦公室", en:"Kaohsiung Office", address:"19F-2, No.31 Hai-Pien Rd., Kaohsiung City 802609, Taiwan", phone:"+886-7-335-0730", email:"info.khh@northgo.com" },
+      { id:"tyo", region:"japan", group:"日本", lat:35.67242, lng:139.77414, name:"東京辦公室", en:"Tokyo Office", address:"6F, Gran+Ginza-East, 1-5-1 Shintomi, Chuo-ku, Tokyo", phone:"+81-3-6260-3944", email:"info.tyo@northgo.com" },
+      { id:"osa", region:"japan", group:"日本", lat:34.69731, lng:135.49874, name:"大阪辦公室", en:"Osaka Office", address:"3F, MF Sakura-Bashi Build, 2-6-23 Sonezaki Shinchi, Kita-ku, Osaka", phone:"+81-6-6676-8395", email:"info.osa@northgo.com" },
+      { id:"sgn", region:"sea", group:"東南亞", lat:10.7927, lng:106.7168, name:"胡志明市辦公室", en:"Ho Chi Minh Office", address:"5F, 92D Nguyen Huu Canh, Ward 22, Binh Thanh, Ho Chi Minh City", phone:"+84-28-9995-7368", email:"info.hcmc@northgo.com" },
+      { id:"lax", region:"na", group:"北美", lat:34.06221, lng:-118.13431, name:"洛杉磯辦公室", en:"Los Angeles Office", address:"119 S. Atlantic Blvd, Ste 301, Monterey Park, CA 91754, USA", phone:"+1-714-853-1088", email:"info.lax@northgo.com" }
+    ];
+    const boundsByRegion = {
+      east: [[8.6, 103.5], [38.2, 143.8]],
+      taiwan: [[22.2, 119.85], [25.45, 122.05]],
+      japan: [[33.85, 134.7], [36.35, 140.6]],
+      sea: [[10.15, 105.85], [11.45, 107.6]],
+      na: [[33.6, -118.75], [34.5, -117.6]]
+    };
+    function pacificLng(lng) { return lng < 0 ? lng + 360 : lng; }
+    const map = L.map("map", { worldCopyJump: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+    const markers = new Map();
+    offices.forEach((office) => {
+      const icon = L.divIcon({ className: "", html: '<div class="pin' + (office.hq ? " hq" : "") + '"></div>', iconSize: [0, 0] });
+      const marker = L.marker([office.lat, office.lng], { icon, title: office.name }).addTo(map);
+      marker.bindPopup('<div class="popup"><h2>' + office.name + (office.hq ? "（總部）" : "") + '</h2><p>' + office.en + '<br>' + office.address + '</p><p><a href="tel:' + office.phone.replace(/[^\d+]/g, "") + '">' + office.phone + '</a><br><a href="mailto:' + office.email + '">' + office.email + '</a></p></div>');
+      markers.set(office.id, marker);
+    });
+    const inset = L.map("inset", { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(inset);
+    offices.filter((office) => office.region === "taiwan").forEach((office) => {
+      const icon = L.divIcon({ className: "", html: '<div class="pin' + (office.hq ? " hq" : "") + '"></div>', iconSize: [0, 0] });
+      L.marker([office.lat, office.lng], { icon, title: office.name })
+        .bindTooltip(office.name, { permanent: true, direction: office.id === "txg" ? "left" : "right", offset: [office.id === "txg" ? -8 : 8, 0] })
+        .addTo(inset);
+    });
+    function placeMarkers(region) {
+      offices.forEach((office) => {
+        const lng = region === "world" ? pacificLng(office.lng) : office.lng;
+        markers.get(office.id).setLatLng([office.lat, lng]);
+      });
+    }
+    function fit(bounds, cap) {
+      const box = L.latLngBounds(bounds);
+      const apply = () => {
+        let zoom = Math.floor(map.getBoundsZoom(box, false, L.point(24, 24)));
+        if (cap) zoom = Math.min(cap, zoom);
+        map.stop();
+        map.setView(box.getCenter(), Math.max(zoom, 1), { animate: false });
+      };
+      if (!map._loaded) {
+        map.setView(box.getCenter(), 2);
+        requestAnimationFrame(apply);
+      } else apply();
+    }
+    let selectToken = 0;
+    function showRegion(id) {
+      document.querySelectorAll("[data-region]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.region === id));
+      });
+      document.getElementById("inset").hidden = !(id === "world" || id === "east");
+      placeMarkers(id);
+      if (id === "world") fit(offices.map((office) => [office.lat, pacificLng(office.lng)]), 3);
+      else fit(boundsByRegion[id]);
+      if (!inset._loaded) inset.setView([23.7, 120.9], 6);
+      else inset.fitBounds([[22.2, 119.85], [25.45, 122.05]], { padding: [18, 18], animate: false });
+    }
+    function selectOffice(id) {
+      const office = offices.find((item) => item.id === id);
+      const marker = markers.get(id);
+      const zoom = office.region === "taiwan" || office.region === "japan" ? 12 : 13;
+      const token = ++selectToken;
+      map.stop();
+      map.once("moveend", () => { if (token === selectToken) marker.openPopup(); });
+      map.flyTo(marker.getLatLng(), zoom, { duration: 0.8 });
+    }
+    const list = document.getElementById("list");
+    ["台灣", "日本", "東南亞", "北美"].forEach((group) => {
+      const heading = document.createElement("h2");
+      heading.textContent = group;
+      list.appendChild(heading);
+      offices.filter((office) => office.group === group).forEach((office) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "office-btn";
+        button.appendChild(document.createTextNode(office.name + (office.hq ? "（總部）" : "")));
+        const small = document.createElement("small");
+        small.textContent = office.address;
+        button.appendChild(small);
+        button.addEventListener("click", () => selectOffice(office.id));
+        list.appendChild(button);
+      });
+    });
+    document.querySelectorAll("[data-region]").forEach((button) => {
+      button.addEventListener("click", () => showRegion(button.dataset.region));
+    });
+    showRegion("world");
+  </script>
+</body>
+</html>
