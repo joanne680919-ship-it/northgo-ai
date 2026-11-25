@@ -34,9 +34,9 @@
 .hero-cover-shade{background:transparent}
 .hero-cover-content{background:transparent;border-radius:0;padding:0;max-width:34rem}
 .hero-cover .eyebrow{color:#087a86}
-.hero-cover h1{color:#0a1b33}
-.hero-cover .lede{color:#1e3344}
-.hero-cover-media{object-position:center center}
+.hero-cover h1{color:#0a1b33;text-shadow:0 0 16px rgba(215,230,238,.95)}
+.hero-cover .lede{color:#0a1b33;text-shadow:0 0 14px rgba(215,230,238,.95)}
+.hero-cover-media{object-position:center 30%}
 .hero-cover .hero-actions .btn-light{border-color:#0a1b33;color:#0a1b33;background:transparent}
 .hero-cover .hero-actions .btn-light:hover{background:#0a1b3314;color:#0a1b33}
 .hero-cover .hero-actions .btn-light:first-child{background:#00bfbf;border-color:#00bfbf;color:#0a1b33}
