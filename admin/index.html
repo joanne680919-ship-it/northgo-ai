@@ -23,6 +23,8 @@
     .card { width:min(100%,420px); }
     .logo { font-weight:800; letter-spacing:-.04em; font-size:1.7rem; color:#0a1b33; }
     .logo span { color:#00bfbf; }
+    img.logo { height:1.7rem; width:auto; display:block; }
+    .brand img.logo { height:1.2rem; }
     label { display:flex; flex-direction:column; gap:.35rem; font-weight:650; margin-top:.9rem; }
     input, select, textarea { border:1px solid var(--line); border-radius:12px; min-height:44px; padding:.65rem .8rem; background:#fff; color:inherit; }
     textarea { min-height:110px; resize:vertical; }
@@ -99,14 +101,14 @@
   <section class="login" id="login">
     <div class="login-visual" style="background-image:url('/northgo-ai/images/freight-hero.jpg?v=map')">
       <div>
-        <p class="logo">North<span>go</span></p>
+        <img class="logo" src="/northgo-ai/logo.svg" alt="Northgo">
         <h1>客戶詢問，集中在這裡。</h1>
         <p>登入後可依角色使用選單。管理者可以維護使用者和後台選單。</p>
       </div>
     </div>
     <div class="login-panel">
       <form class="card" id="login-form">
-        <p class="logo">North<span>go</span></p>
+        <img class="logo" src="/northgo-ai/logo.svg" alt="Northgo">
         <h2>後台登入</h2>
         <label>帳號或電子郵件<input name="email" autocomplete="username" required value="admin@northgo.com"></label>
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
@@ -118,7 +120,7 @@
   </section>
   <div class="app" id="app" hidden>
     <header class="top">
-      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.4</span></span></div>
+      <div class="brand"><img class="logo" src="/northgo-ai/logo.svg" alt="Northgo"> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.4</span></span></div>
       <div class="top-actions">
         <div class="me-chip" id="me-chip"></div>
         <button class="btn" type="button" id="account">我的帳號</button>
