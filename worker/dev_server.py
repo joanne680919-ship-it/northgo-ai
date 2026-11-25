@@ -12,12 +12,13 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "dev.db"
 SECRET = "northgo-dev-session-secret"
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 STATUSES = {"new", "in_progress", "closed"}
 ROLES = {
     "admin": {"name": "管理員", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},
     "sales": {"name": "業務", "views": ["enquiries"]},
     "support": {"name": "客服", "views": ["enquiries"]},
+    "docs": {"name": "文件部", "views": ["content", "media", "pages"]},
 }
 VIEW_KEYS = {"", "enquiries", "content", "media", "pages", "users", "menus"}
 
@@ -42,7 +43,8 @@ def connect():
     if "assignee_id" not in enquiry_columns:
         con.execute("ALTER TABLE enquiries ADD COLUMN assignee_id INTEGER")
     con.execute("UPDATE users SET role = 'sales' WHERE role = 'editor'")
-    con.execute("UPDATE menus SET roles = 'admin' WHERE id IN (1, 3, 4, 5)")
+    con.execute("UPDATE menus SET roles = 'admin' WHERE id = 1")
+    con.execute("UPDATE menus SET roles = 'admin,docs' WHERE id IN (3, 4, 5)")
     con.execute("UPDATE menus SET roles = 'admin,sales,support' WHERE id = 2")
     con.commit()
     return con
@@ -461,7 +463,7 @@ class Handler(BaseHTTPRequestHandler):
         con = connect()
         rows = con.execute("SELECT id, name, username, role FROM users WHERE active = 1 ORDER BY name, id").fetchall()
         con.close()
-        return self.end_json(200, {"items": [{"id": row["id"], "name": row["name"], "username": row["username"] or "", "role": row["role"]} for row in rows]})
+        return self.end_json(200, {"items": [{"id": row["id"], "name": row["name"], "username": row["username"] or "", "role": row["role"]} for row in rows if allows(row, "enquiries")]})
 
     def enquiry_assignee(self, con, body, actor, public, current=None):
         if public or not actor:
@@ -478,8 +480,8 @@ class Handler(BaseHTTPRequestHandler):
             return False
         if not assignee:
             return None
-        row = con.execute("SELECT id FROM users WHERE id = ? AND active = 1", (assignee,)).fetchone()
-        return assignee if row else False
+        row = con.execute("SELECT id, role FROM users WHERE id = ? AND active = 1", (assignee,)).fetchone()
+        return assignee if row and allows(row, "enquiries") else False
 
     def delete_enquiry(self, item_id):
         con = connect()

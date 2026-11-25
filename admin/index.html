@@ -45,6 +45,7 @@
     .role-pill { display:inline-flex; align-items:center; gap:.2rem; border-radius:999px; padding:.12rem .55rem; font-size:.75rem; font-weight:750; background:#e7f8f4; color:#0f766e; white-space:nowrap; }
     .role-pill.sales { background:#e8f0ff; color:#1d4ed8; }
     .role-pill.support { background:#fff4e5; color:#9a3412; }
+    .role-pill.docs { background:#f3e8ff; color:#6d28d9; }
     .top .btn { background:#fff; color:var(--navy); }
     .frame { display:grid; grid-template-columns:232px 1fr; min-height:0; }
     aside { background:#181818; color:#cccccc; padding:0; display:flex; flex-direction:column; min-height:0; overflow:auto; }
@@ -114,13 +115,13 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions-row"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.4</span></p>
+        <p class="version">版本 <span data-version>0.1.5</span></p>
       </form>
     </div>
   </section>
   <div class="app" id="app" hidden>
     <header class="top">
-      <div class="brand"><img class="logo" src="/northgo-ai/logo.svg" alt="Northgo"> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.4</span></span></div>
+      <div class="brand"><img class="logo" src="/northgo-ai/logo.svg" alt="Northgo"> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.5</span></span></div>
       <div class="top-actions">
         <div class="me-chip" id="me-chip"></div>
         <button class="btn" type="button" id="account">我的帳號</button>
@@ -142,13 +143,13 @@
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.4";
+    const VERSION = window.NORTHGO_VERSION || "0.1.5";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
     const statusNames = { new: "新進", in_progress: "處理中", closed: "已回覆" };
     const viewNames = { enquiries: "客戶詢問", content: "網站內容", media: "媒體", pages: "動態頁面", users: "使用者", menus: "選單管理" };
-    const roleNames = { admin: "管理員", sales: "業務", support: "客服" };
+    const roleNames = { admin: "管理員", sales: "業務", support: "客服", docs: "文件部" };
     let view = "users";
     let me = null;
     let menus = [];
@@ -439,6 +440,7 @@
         <label class="check"><input type="checkbox" name="role-admin" ${!item.roles || item.roles.includes("admin") ? "checked" : ""}> 管理員可見</label>
         <label class="check"><input type="checkbox" name="role-sales" ${item.roles && item.roles.includes("sales") ? "checked" : ""}> 業務可見</label>
         <label class="check"><input type="checkbox" name="role-support" ${item.roles && item.roles.includes("support") ? "checked" : ""}> 客服可見</label>
+        <label class="check"><input type="checkbox" name="role-docs" ${item.roles && item.roles.includes("docs") ? "checked" : ""}> 文件部可見</label>
         <label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 顯示</label>
         <input type="hidden" name="kind" value="menu"><input type="hidden" name="id" value="${item.id || ""}">
         <div class="actions-row"><button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
@@ -489,6 +491,7 @@
           if (form.get("role-admin") === "on") roles.push("admin");
           if (form.get("role-sales") === "on") roles.push("sales");
           if (form.get("role-support") === "on") roles.push("support");
+          if (form.get("role-docs") === "on") roles.push("docs");
           const body = { label: form.get("label"), parentId: form.get("parentId") || null, viewKey: form.get("viewKey"), sortOrder: Number(form.get("sortOrder")), roles, active: form.get("active") === "on" };
           await api("/api/menus" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         } else {

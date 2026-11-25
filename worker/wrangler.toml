@@ -4,7 +4,7 @@ compatibility_date = "2026-11-25"
 workers_dev = true
 
 [vars]
-APP_VERSION = "0.1.4"
+APP_VERSION = "0.1.5"
 
 # Create the database, then replace database_id:
 #   wrangler d1 create northgo

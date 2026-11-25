@@ -1,9 +1,10 @@
-const VERSION_FALLBACK = "0.1.4";
+const VERSION_FALLBACK = "0.1.5";
 const STATUSES = ["new", "in_progress", "closed"];
 const ROLES = {
   admin: { name: "管理員", views: ["enquiries", "content", "media", "pages", "users", "menus"] },
   sales: { name: "業務", views: ["enquiries"] },
-  support: { name: "客服", views: ["enquiries"] }
+  support: { name: "客服", views: ["enquiries"] },
+  docs: { name: "文件部", views: ["content", "media", "pages"] }
 };
 const VIEW_KEYS = ["", "enquiries", "content", "media", "pages", "users", "menus"];
 let schemaReady = null;
@@ -117,9 +118,9 @@ async function ensureSchema(env) {
       const seeds = [
         [1, null, "內容管理", "", 10, "admin"],
         [2, 1, "客戶詢問", "enquiries", 10, "admin,sales,support"],
-        [3, 1, "網站內容", "content", 20, "admin"],
-        [4, 1, "媒體", "media", 30, "admin"],
-        [5, 1, "動態頁面", "pages", 40, "admin"],
+        [3, 1, "網站內容", "content", 20, "admin,docs"],
+        [4, 1, "媒體", "media", 30, "admin,docs"],
+        [5, 1, "動態頁面", "pages", 40, "admin,docs"],
         [6, null, "系統設定", "", 20, "admin"],
         [7, 6, "使用者", "users", 10, "admin"],
         [8, 6, "選單管理", "menus", 20, "admin"]
@@ -129,7 +130,7 @@ async function ensureSchema(env) {
           "INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active) SELECT ?, ?, ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = ?)"
         ).bind(id, parentId, label, viewKey, sortOrder, roles, id).run();
       }
-      const roleUpdates = [[1, "admin"], [2, "admin,sales,support"], [3, "admin"], [4, "admin"], [5, "admin"]];
+      const roleUpdates = [[1, "admin"], [2, "admin,sales,support"], [3, "admin,docs"], [4, "admin,docs"], [5, "admin,docs"]];
       for (const [id, roles] of roleUpdates) {
         await env.DB.prepare("UPDATE menus SET roles = ? WHERE id = ?").bind(roles, id).run();
       }
@@ -242,7 +243,8 @@ async function deleteEnquiry(id, env, user) {
 
 async function listAssignees(env) {
   const rows = await env.DB.prepare("SELECT id, name, username, role FROM users WHERE active = 1 ORDER BY name, id").all();
-  return json({ items: (rows.results || []).map((row) => ({ id: row.id, name: row.name, username: row.username || "", role: row.role })) }, 200);
+  const items = (rows.results || []).filter((row) => allows(row, "enquiries")).map((row) => ({ id: row.id, name: row.name, username: row.username || "", role: row.role }));
+  return json({ items }, 200);
 }
 
 function canSeeEnquiry(user, row) {
@@ -266,8 +268,8 @@ async function enquiryAssignee(env, body, actor, isPublic, current) {
   if (body.assigneeId === null || body.assigneeId === "") return null;
   const id = Number(body.assigneeId);
   if (!id) return null;
-  const row = await env.DB.prepare("SELECT id FROM users WHERE id = ? AND active = 1").bind(id).first();
-  return row ? id : false;
+  const row = await env.DB.prepare("SELECT id, role FROM users WHERE id = ? AND active = 1").bind(id).first();
+  return row && allows(row, "enquiries") ? id : false;
 }
 
 async function listUsers(url, env) {
