@@ -12,15 +12,15 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "dev.db"
 SECRET = "northgo-dev-session-secret"
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 STATUSES = {"new", "in_progress", "closed"}
 ROLES = {
-    "admin": {"name": "管理員", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},
+    "admin": {"name": "管理員", "views": ["enquiries", "content", "media", "pages", "users", "menus", "permissions"]},
     "sales": {"name": "業務", "views": ["enquiries"]},
     "support": {"name": "客服", "views": ["enquiries"]},
     "docs": {"name": "文件部", "views": ["content", "media", "pages"]},
 }
-VIEW_KEYS = {"", "enquiries", "content", "media", "pages", "users", "menus"}
+VIEW_KEYS = {"", "enquiries", "content", "media", "pages", "users", "menus", "permissions"}
 
 
 def connect():

@@ -62,3 +62,5 @@ INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
 SELECT 7, 6, '使用者', 'users', 10, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 7);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
 SELECT 8, 6, '選單管理', 'menus', 20, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 8);
+INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
+SELECT 9, 6, '角色權限', 'permissions', 30, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 9);

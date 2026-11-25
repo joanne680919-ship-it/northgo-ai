@@ -115,13 +115,13 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions-row"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.5</span></p>
+        <p class="version">版本 <span data-version>0.1.6</span></p>
       </form>
     </div>
   </section>
   <div class="app" id="app" hidden>
     <header class="top">
-      <div class="brand"><img class="logo" src="/northgo-ai/logo.svg" alt="Northgo"> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.5</span></span></div>
+      <div class="brand"><img class="logo" src="/northgo-ai/logo.svg" alt="Northgo"> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.6</span></span></div>
       <div class="top-actions">
         <div class="me-chip" id="me-chip"></div>
         <button class="btn" type="button" id="account">我的帳號</button>
@@ -143,12 +143,12 @@
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.5";
+    const VERSION = window.NORTHGO_VERSION || "0.1.6";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
     const statusNames = { new: "新進", in_progress: "處理中", closed: "已回覆" };
-    const viewNames = { enquiries: "客戶詢問", content: "網站內容", media: "媒體", pages: "動態頁面", users: "使用者", menus: "選單管理" };
+    const viewNames = { enquiries: "客戶詢問", content: "網站內容", media: "媒體", pages: "動態頁面", users: "使用者", menus: "選單管理", permissions: "角色權限" };
     const roleNames = { admin: "管理員", sales: "業務", support: "客服", docs: "文件部" };
     let view = "users";
     let me = null;
@@ -280,13 +280,26 @@
     async function render() {
       const host = document.getElementById("view");
       try {
-        host.innerHTML = view === "users" ? await usersView() : view === "menus" ? await menusView() : view === "enquiries" ? await enquiriesView() : placeholder();
+        host.innerHTML = view === "users" ? await usersView() : view === "menus" ? await menusView() : view === "permissions" ? permissionsView() : view === "enquiries" ? await enquiriesView() : placeholder();
         banner("");
       } catch (error) {
         host.innerHTML = "";
         banner(error.status === 403 ? "這個角色不能使用此功能。" : error.message === "offline" ? "後台 API 尚未連線。" : "讀取失敗，請重新登入。");
         if (error.status === 401) showLogin("登入已過期。");
       }
+    }
+    function permissionsView() {
+      const rows = [
+        ["看詢問", "全部", "全部", "只看自己的", "不行"],
+        ["改狀態和備註", "可以", "可以", "只能改成處理中", "不行"],
+        ["指定負責人", "可以", "可以", "不行", "不行"],
+        ["刪詢問", "可以", "不行", "不行", "不行"],
+        ["網站內容、媒體、動態頁面", "可以", "不行", "不行", "可以"],
+        ["管帳號", "可以", "不行", "不行", "不行"],
+        ["管選單", "可以", "不行", "不行", "不行"]
+      ];
+      const body = rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("");
+      return `<section class="panel"><div class="panel-head">角色權限</div><table class="menu-table"><thead><tr><th>動作</th><th>管理員</th><th>業務</th><th>客服</th><th>文件部</th></tr></thead><tbody>${body}</tbody></table></section>`;
     }
     function placeholder() {
       return `<section class="panel"><div class="panel-head">${escapeHtml(viewNames[view] || view)}</div><div class="empty">此選單已依角色顯示。內容維護會接在這個頁面。</div></section>`;

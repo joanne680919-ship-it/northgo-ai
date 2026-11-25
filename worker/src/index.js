@@ -1,12 +1,12 @@
-const VERSION_FALLBACK = "0.1.5";
+const VERSION_FALLBACK = "0.1.6";
 const STATUSES = ["new", "in_progress", "closed"];
 const ROLES = {
-  admin: { name: "管理員", views: ["enquiries", "content", "media", "pages", "users", "menus"] },
+  admin: { name: "管理員", views: ["enquiries", "content", "media", "pages", "users", "menus", "permissions"] },
   sales: { name: "業務", views: ["enquiries"] },
   support: { name: "客服", views: ["enquiries"] },
   docs: { name: "文件部", views: ["content", "media", "pages"] }
 };
-const VIEW_KEYS = ["", "enquiries", "content", "media", "pages", "users", "menus"];
+const VIEW_KEYS = ["", "enquiries", "content", "media", "pages", "users", "menus", "permissions"];
 let schemaReady = null;
 
 export default {
@@ -123,7 +123,8 @@ async function ensureSchema(env) {
         [5, 1, "動態頁面", "pages", 40, "admin,docs"],
         [6, null, "系統設定", "", 20, "admin"],
         [7, 6, "使用者", "users", 10, "admin"],
-        [8, 6, "選單管理", "menus", 20, "admin"]
+        [8, 6, "選單管理", "menus", 20, "admin"],
+        [9, 6, "角色權限", "permissions", 30, "admin"]
       ];
       for (const [id, parentId, label, viewKey, sortOrder, roles] of seeds) {
         await env.DB.prepare(
