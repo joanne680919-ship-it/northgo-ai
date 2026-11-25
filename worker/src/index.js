@@ -1,4 +1,4 @@
-const VERSION_FALLBACK = "0.1.0";
+const VERSION_FALLBACK = "0.1.1";
 const STATUSES = ["new", "in_progress", "closed"];
 
 export default {

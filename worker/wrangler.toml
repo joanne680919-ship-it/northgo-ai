@@ -1,9 +1,10 @@
 name = "northgo-admin"
 main = "src/index.js"
 compatibility_date = "2026-11-25"
+workers_dev = true
 
 [vars]
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.1.1"
 
 # Create the database, then replace database_id:
 #   wrangler d1 create northgo
@@ -12,4 +13,4 @@ APP_VERSION = "0.1.0"
 [[d1_databases]]
 binding = "DB"
 database_name = "northgo"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "61395450-dbd7-4ffc-92b0-d583e2aff6c2"

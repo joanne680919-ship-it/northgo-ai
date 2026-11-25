@@ -85,7 +85,7 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.0</span></p>
+        <p class="version">版本 <span data-version>0.1.1</span></p>
       </form>
     </div>
   </section>
@@ -96,7 +96,7 @@
         <button type="button" data-view="enquiries" aria-current="page">客戶詢問</button>
         <button type="button" data-view="users">使用者管理</button>
       </nav>
-      <p class="version">版本 <span data-version>0.1.0</span></p>
+      <p class="version">版本 <span data-version>0.1.1</span></p>
       <button class="btn ghost" type="button" id="logout" style="margin-top:.8rem">登出</button>
     </aside>
     <main>
@@ -115,7 +115,7 @@
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.0";
+    const VERSION = window.NORTHGO_VERSION || "0.1.1";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
