@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "dev.db"
 SECRET = "northgo-dev-session-secret"
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 STATUSES = {"new", "in_progress", "closed"}
 ROLES = {
     "admin": {"name": "管理者", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},

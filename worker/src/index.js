@@ -1,4 +1,4 @@
-const VERSION_FALLBACK = "0.1.2";
+const VERSION_FALLBACK = "0.1.3";
 const STATUSES = ["new", "in_progress", "closed"];
 const ROLES = {
   admin: { name: "管理者", views: ["enquiries", "content", "media", "pages", "users", "menus"] },

@@ -44,13 +44,21 @@
     .role-pill.editor { background:#e8f0ff; color:#1d4ed8; }
     .top .btn { background:#fff; color:var(--navy); }
     .frame { display:grid; grid-template-columns:232px 1fr; min-height:0; }
-    aside { background:#17191d; color:#d5dbe3; padding:.9rem .7rem 1rem; display:flex; flex-direction:column; min-height:0; overflow:auto; }
-    .nav-label { margin:.2rem .6rem .55rem; color:#8b93a1; font-size:.78rem; font-weight:700; }
-    nav { display:grid; gap:.15rem; }
-    .group { margin:.55rem .35rem .15rem; color:#c5ced8; font-size:.92rem; font-weight:700; display:flex; align-items:center; gap:.4rem; }
-    nav button { text-align:left; border:0; background:transparent; color:#e8edf3; border-radius:10px; min-height:40px; padding:.4rem .7rem .4rem 1.7rem; font-weight:700; }
-    nav button[aria-current="page"] { background:#2457d6; color:#fff; }
-    .front { margin-top:auto; color:#9fe9e9; text-decoration:none; font-weight:700; padding:.7rem .6rem; }
+    aside { background:#181818; color:#cccccc; padding:0; display:flex; flex-direction:column; min-height:0; overflow:auto; }
+    nav { padding:6px 0 8px; }
+    .tree-row { position:relative; display:flex; align-items:center; gap:3px; width:100%; height:22px; min-height:22px; border:0; border-radius:0; background:transparent; color:#cccccc; padding:0 8px 0 calc(4px + var(--depth) * 12px); font-size:13px; font-weight:400; text-align:left; }
+    .tree-row:hover { background:#2a2d2e; }
+    .tree-row[aria-current="page"] { background:#37373d; color:#fff; }
+    .tree-row .guides { position:absolute; left:0; top:0; bottom:0; width:calc(var(--depth) * 12px); background-image:repeating-linear-gradient(to right, transparent 0 11px, #3c3c3c 11px 12px); pointer-events:none; }
+    .tree-row svg { width:16px; height:16px; flex:none; }
+    .tree-row .chev { color:#c5c5c5; }
+    .tree-row[aria-expanded="true"] .chev { transform:rotate(90deg); }
+    .tree-row .chev.blank { visibility:hidden; }
+    .tree-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .menu-name { display:inline-flex; align-items:center; gap:.35rem; padding-left:calc(var(--depth) * 1.1rem); white-space:nowrap; }
+    .menu-table th, .menu-table td { white-space:nowrap; }
+    .menu-name svg { width:14px; height:14px; flex:none; }
+    .front { margin-top:auto; color:#9fe9e9; text-decoration:none; font-weight:700; padding:.7rem .8rem; }
     main { padding:1.1rem 1.2rem 1.5rem; min-width:0; overflow:auto; }
     .panel { background:#fff; border-radius:16px; border:1px solid var(--line); overflow:auto; }
     .panel-head { display:flex; align-items:center; gap:.45rem; padding:.85rem 1rem; border-bottom:1px solid var(--line); font-weight:800; }
@@ -103,13 +111,13 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions-row"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.2</span></p>
+        <p class="version">版本 <span data-version>0.1.3</span></p>
       </form>
     </div>
   </section>
   <div class="app" id="app" hidden>
     <header class="top">
-      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.2</span></span></div>
+      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.3</span></span></div>
       <div class="top-actions">
         <div class="me-chip" id="me-chip"></div>
         <button class="btn" type="button" id="account">我的帳號</button>
@@ -118,8 +126,7 @@
     </header>
     <div class="frame">
       <aside>
-        <p class="nav-label">功能</p>
-        <nav id="nav"></nav>
+        <nav id="nav" aria-label="後台選單"></nav>
         <a class="front" href="https://joanne680919-ship-it.github.io/northgo-ai/zh-tw/services/freight-logistics/">前往前台貨運物流</a>
       </aside>
       <main>
@@ -132,7 +139,7 @@
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.2";
+    const VERSION = window.NORTHGO_VERSION || "0.1.3";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
@@ -187,17 +194,54 @@
       const color = soft ? ["#d9f2c8", "#c9ddff", "#ffe3b8", "#f7d0e0"][(name || "").length % 4] : colors[(name || "").length % colors.length];
       return `<span class="avatar${soft ? " soft" : ""}" style="background:${color}">${escapeHtml(letter)}</span>`;
     }
+    const collapsedKey = "northgo-nav-collapsed";
+    const iconChevron = `<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6 4.2 10.2 8 6 11.8z"/></svg>`;
+    const iconFolder = `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="#dcb67a" d="M1.5 3.5h4.2l1.2 1.3H14.5v7.7h-13z"/></svg>`;
+    const iconFolderOpen = `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="#dcb67a" d="M1.5 3.2h4.1l1.1 1.2H14.5V6H2.4L1.2 13.2V3.2z"/><path fill="#e8c99b" d="M2.2 6h12.4l-1.3 6.6H1.5z"/></svg>`;
+    const iconFile = `<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="#8a93a3" d="M4 1.5h5.2L13 5.3V14.5H4z"/><path fill="#c5c9d1" d="M9.2 1.5V5.3H13z"/></svg>`;
+    function collapsedIds() {
+      try { return new Set(JSON.parse(sessionStorage.getItem(collapsedKey) || "[]").map(Number)); }
+      catch (error) { return new Set(); }
+    }
+    function toggleCollapsed(id) {
+      const ids = collapsedIds();
+      if (ids.has(id)) ids.delete(id); else ids.add(id);
+      sessionStorage.setItem(collapsedKey, JSON.stringify([...ids]));
+    }
+    function childMenus(parentId) {
+      const key = parentId || null;
+      return menus.filter((item) => (item.parentId || null) === key).slice().sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+    }
+    function hasPage(item) {
+      if (item.viewKey) return true;
+      return childMenus(item.id).some(hasPage);
+    }
+    function treeMarkup(parentId, depth) {
+      return childMenus(parentId).map((item) => {
+        const kids = childMenus(item.id);
+        const folder = kids.length > 0 || !item.viewKey;
+        if (folder && !hasPage(item)) return "";
+        const open = !collapsedIds().has(item.id);
+        if (folder) {
+          return `<div class="tree-node"><button type="button" class="tree-row" data-folder="${item.id}" aria-expanded="${open ? "true" : "false"}" style="--depth:${depth}"><span class="guides"></span>${iconChevron}${open ? iconFolderOpen : iconFolder}<span class="tree-label">${escapeHtml(item.label)}</span></button>${open ? treeMarkup(item.id, depth + 1) : ""}</div>`;
+        }
+        return `<button type="button" class="tree-row" data-view="${item.viewKey}" ${item.viewKey === view ? 'aria-current="page"' : ""} style="--depth:${depth}"><span class="guides"></span><svg class="chev blank" viewBox="0 0 16 16" aria-hidden="true"></svg>${iconFile}<span class="tree-label">${escapeHtml(item.label)}</span></button>`;
+      }).join("");
+    }
     function paintChrome() {
       const chip = document.getElementById("me-chip");
       chip.innerHTML = `${avatar(me.name)}<div><strong>${escapeHtml(me.name)}</strong><small>@${escapeHtml(me.username)}</small></div><span class="role-pill ${me.role}">${me.role === "admin" ? "★" : "👤"} ${escapeHtml(me.roleName)}</span>`;
-      const groups = menus.filter((item) => !item.parentId);
-      document.getElementById("nav").innerHTML = groups.map((group) => {
-        const children = menus.filter((item) => item.parentId === group.id && item.viewKey);
-        if (!children.length) return "";
-        return `<div class="group">▾ ${escapeHtml(group.label)}</div>` + children.map((item) => `<button type="button" data-view="${item.viewKey}" ${item.viewKey === view ? 'aria-current="page"' : ""}>${escapeHtml(item.label)}</button>`).join("");
-      }).join("");
-      document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.view; paintChrome(); render(); }));
+      document.getElementById("nav").innerHTML = treeMarkup(null, 0);
     }
+    document.getElementById("nav").addEventListener("click", (event) => {
+      const folder = event.target.closest("[data-folder]");
+      if (folder) { toggleCollapsed(Number(folder.dataset.folder)); paintChrome(); return; }
+      const page = event.target.closest("[data-view]");
+      if (!page) return;
+      view = page.dataset.view;
+      paintChrome();
+      render();
+    });
     async function enter() {
       menus = (await api("/api/menus")).items;
       const allowed = new Set(menus.map((item) => item.viewKey).filter(Boolean));
@@ -265,11 +309,32 @@
         <div class="pager"><span>共 ${data.total} 筆 · 第 ${data.page} / ${pages} 頁</span><button class="btn ghost" type="button" id="prev" ${data.page <= 1 ? "disabled" : ""}>上一頁</button><button class="btn ghost" type="button" id="next" ${data.page >= pages ? "disabled" : ""}>下一頁</button></div>
       </section>`;
     }
+    function orderedMenus(items) {
+      const groups = new Map();
+      items.forEach((item) => {
+        const key = item.parentId || 0;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+      groups.forEach((list) => list.sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id));
+      const rows = [];
+      const seen = new Set();
+      function walk(parentId, depth) {
+        (groups.get(parentId) || []).forEach((item) => {
+          seen.add(item.id);
+          rows.push({ item, depth });
+          walk(item.id, depth + 1);
+        });
+      }
+      walk(0, 0);
+      items.filter((item) => !seen.has(item.id)).forEach((item) => rows.push({ item, depth: 0 }));
+      return rows;
+    }
     async function menusView() {
       const data = await api("/api/menus?scope=manage");
       const byId = Object.fromEntries(data.items.map((item) => [item.id, item]));
-      const rows = data.items.map((item) => `<tr>
-        <td>${escapeHtml(item.label)}</td>
+      const rows = orderedMenus(data.items).map(({ item, depth }) => `<tr>
+        <td><span class="menu-name" style="--depth:${depth}">${item.viewKey ? iconFile : iconFolder}${escapeHtml(item.label)}</span></td>
         <td>${item.parentId && byId[item.parentId] ? escapeHtml(byId[item.parentId].label) : "—"}</td>
         <td>${escapeHtml(viewNames[item.viewKey] || (item.viewKey ? item.viewKey : "群組"))}</td>
         <td>${item.roles.map((role) => roleNames[role] || role).join("、")}</td>
@@ -277,7 +342,7 @@
         <td>${item.active ? "顯示" : "隱藏"}</td>
         <td><div class="ops"><button class="icon edit" type="button" data-menu="${item.id}" aria-label="編輯">✎</button><button class="icon del" type="button" data-menu-del="${item.id}" aria-label="刪除">🗑</button></div></td>
       </tr>`).join("");
-      return `<section class="panel"><div class="panel-head">選單管理</div><div class="tools"><div class="actions"><button class="btn" type="button" id="create">新增選單</button></div></div><table><thead><tr><th>名稱</th><th>上層</th><th>功能</th><th>可見角色</th><th>排序</th><th>狀態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+      return `<section class="panel"><div class="panel-head">選單管理</div><div class="tools"><div class="actions"><button class="btn" type="button" id="create">新增選單</button></div></div><table class="menu-table"><thead><tr><th>名稱</th><th>上層</th><th>功能</th><th>可見角色</th><th>排序</th><th>狀態</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table></section>`;
     }
     async function enquiriesView() {
       const q = document.getElementById("q") ? document.getElementById("q").value : "";
