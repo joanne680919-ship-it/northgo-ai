@@ -1,0 +1,393 @@
+"""Local stand-in for the Cloudflare Worker while D1 is not deployed."""
+import hashlib
+import hmac
+import json
+import sqlite3
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+ROOT = Path(__file__).resolve().parent
+DB_PATH = ROOT / "dev.db"
+SECRET = "northgo-dev-session-secret"
+VERSION = "0.1.0"
+STATUSES = {"new", "in_progress", "closed"}
+
+
+def connect():
+    con = sqlite3.connect(DB_PATH)
+    con.row_factory = sqlite3.Row
+    con.executescript((ROOT / "schema.sql").read_text(encoding="utf-8"))
+    return con
+
+
+def b64url(raw):
+    import base64
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def sign_token(payload):
+    body = b64url(json.dumps(payload, separators=(",", ":")).encode())
+    sig = hmac.new(SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
+    return body + "." + sig
+
+
+def verify_token(token):
+    import base64
+    parts = token.split(".")
+    if len(parts) != 2:
+        return None
+    expected = hmac.new(SECRET.encode(), parts[0].encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, parts[1]):
+        return None
+    padded = parts[0] + "=" * (-len(parts[0]) % 4)
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(padded))
+    except (json.JSONDecodeError, ValueError):
+        return None
+    if payload.get("exp", 0) < time.time() * 1000:
+        return None
+    return payload
+
+
+def hash_password(password):
+    salt = hashlib.sha256(f"{password}{time.time()}".encode()).digest()[:16]
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
+    return "pbkdf2$100000$" + salt.hex() + "$" + digest.hex()
+
+
+def verify_password(password, stored):
+    parts = (stored or "").split("$")
+    if len(parts) != 4 or parts[0] != "pbkdf2":
+        return False
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(parts[2]), int(parts[1]))
+    return hmac.compare_digest(digest.hex(), parts[3])
+
+
+def public_user(row):
+    return {"id": row["id"], "email": row["email"], "name": row["name"], "role": row["role"], "active": bool(row["active"]), "createdAt": row["created_at"]}
+
+
+def public_enquiry(row):
+    return {
+        "id": row["id"], "locale": row["locale"], "firstName": row["first_name"], "lastName": row["last_name"],
+        "company": row["company"], "email": row["email"], "phone": row["phone"], "country": row["country"],
+        "services": [item for item in (row["services"] or "").split(",") if item],
+        "message": row["message"], "status": row["status"], "notes": row["notes"],
+        "createdAt": row["created_at"], "updatedAt": row["updated_at"],
+    }
+
+
+def normalize(body):
+    services = body.get("services") or []
+    if isinstance(services, str):
+        services = [item.strip() for item in services.split(",") if item.strip()]
+    status = body.get("status") or "new"
+    if status not in STATUSES:
+        status = "new"
+    return {
+        "locale": str(body.get("locale") or "")[:12],
+        "firstName": str(body.get("firstName") or "").strip(),
+        "lastName": str(body.get("lastName") or "").strip(),
+        "company": str(body.get("company") or "").strip(),
+        "email": str(body.get("email") or "").strip(),
+        "phone": str(body.get("phone") or "").strip(),
+        "country": str(body.get("country") or "").strip(),
+        "services": ",".join(services),
+        "message": str(body.get("message") or "").strip(),
+        "status": status,
+        "notes": str(body.get("notes") or ""),
+    }
+
+
+def missing(record):
+    for key in ("firstName", "lastName", "company", "email", "phone", "country", "message"):
+        if not record[key]:
+            return key
+    if "@" not in record["email"]:
+        return "email"
+    return ""
+
+
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, fmt, *args):
+        print("api", self.address_string(), fmt % args)
+
+    def end_json(self, code, payload):
+        raw = json.dumps(payload).encode()
+        origin = self.headers.get("Origin") or "*"
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(raw)))
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Vary", "Origin")
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def do_OPTIONS(self):
+        self.end_json(204, {})
+
+    def read_body(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length else b""
+        ctype = self.headers.get("Content-Type") or ""
+        if "application/json" in ctype:
+            return json.loads(raw.decode() or "{}")
+        parsed = parse_qs(raw.decode(), keep_blank_values=True)
+        body = {key: values[0] for key, values in parsed.items()}
+        if "services" in parsed:
+            body["services"] = parsed["services"]
+        return body
+
+    def user(self):
+        header = self.headers.get("Authorization") or ""
+        token = header[7:] if header.startswith("Bearer ") else ""
+        payload = verify_token(token) if token else None
+        if not payload:
+            return None
+        con = connect()
+        row = con.execute("SELECT * FROM users WHERE id = ?", (payload["sub"],)).fetchone()
+        con.close()
+        return row
+
+    def do_GET(self):
+        url = urlparse(self.path)
+        path = url.path.rstrip("/") or "/"
+        if path == "/api/version":
+            return self.end_json(200, {"version": VERSION})
+        if path == "/api/me":
+            row = self.user()
+            if not row:
+                return self.end_json(401, {"error": "unauthorized"})
+            return self.end_json(200, {"user": public_user(row), "version": VERSION})
+        row = self.user()
+        if not row:
+            return self.end_json(401, {"error": "unauthorized"})
+        if path == "/api/enquiries":
+            return self.list_enquiries(parse_qs(url.query))
+        if path.startswith("/api/enquiries/"):
+            return self.get_enquiry(int(path.rsplit("/", 1)[1]))
+        if path == "/api/users":
+            return self.list_users()
+        return self.end_json(404, {"error": "not_found"})
+
+    def do_POST(self):
+        path = urlparse(self.path).path.rstrip("/") or "/"
+        body = self.read_body()
+        if path == "/api/login":
+            return self.login(body)
+        if path in ("/api/enquiry", "/api/enquiries/public"):
+            return self.create_public(body)
+        row = self.user()
+        if not row:
+            return self.end_json(401, {"error": "unauthorized"})
+        if path == "/api/enquiries":
+            return self.save_enquiry(body)
+        if path == "/api/users":
+            return self.create_user(body)
+        return self.end_json(404, {"error": "not_found"})
+
+    def do_PUT(self):
+        path = urlparse(self.path).path.rstrip("/")
+        row = self.user()
+        if not row:
+            return self.end_json(401, {"error": "unauthorized"})
+        body = self.read_body()
+        if path.startswith("/api/enquiries/"):
+            return self.update_enquiry(int(path.rsplit("/", 1)[1]), body)
+        if path.startswith("/api/users/"):
+            return self.update_user(int(path.rsplit("/", 1)[1]), body, row)
+        return self.end_json(404, {"error": "not_found"})
+
+    def do_DELETE(self):
+        path = urlparse(self.path).path.rstrip("/")
+        row = self.user()
+        if not row:
+            return self.end_json(401, {"error": "unauthorized"})
+        if path.startswith("/api/enquiries/"):
+            return self.delete_enquiry(int(path.rsplit("/", 1)[1]))
+        if path.startswith("/api/users/"):
+            return self.delete_user(int(path.rsplit("/", 1)[1]), row)
+        return self.end_json(404, {"error": "not_found"})
+
+    def login(self, body):
+        email = str(body.get("email") or "").strip().lower()
+        con = connect()
+        row = con.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        con.close()
+        if not row or not row["active"] or not verify_password(str(body.get("password") or ""), row["password_hash"]):
+            return self.end_json(401, {"error": "invalid"})
+        token = sign_token({"sub": row["id"], "email": row["email"], "exp": int(time.time() * 1000) + 12 * 60 * 60 * 1000})
+        return self.end_json(200, {"token": token, "user": public_user(row), "version": VERSION})
+
+    def create_public(self, body):
+        if str(body.get("website") or "").strip():
+            return self.end_json(200, {"ok": True, "id": 0})
+        if str(body.get("acceptTerms") or "") != "yes":
+            return self.end_json(400, {"error": "terms"})
+        return self.save_enquiry(body, public=True)
+
+    def save_enquiry(self, body, public=False):
+        record = normalize(body)
+        field = missing(record)
+        if field:
+            return self.end_json(400, {"error": "required", "field": field})
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        con = connect()
+        cur = con.execute(
+            """INSERT INTO enquiries (locale, first_name, last_name, company, email, phone, country, services, message, status, notes, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], now, now),
+        )
+        con.commit()
+        row = con.execute("SELECT * FROM enquiries WHERE id = ?", (cur.lastrowid,)).fetchone()
+        con.close()
+        if public:
+            return self.end_json(201, {"ok": True, "id": row["id"]})
+        return self.end_json(201, public_enquiry(row))
+
+    def list_enquiries(self, query):
+        q = (query.get("q") or [""])[0].strip()
+        status = (query.get("status") or [""])[0].strip()
+        if status == "all":
+            status = ""
+        if status and status not in STATUSES:
+            return self.end_json(400, {"error": "status"})
+        like = "%" + q + "%"
+        flag = "1" if q else ""
+        con = connect()
+        rows = con.execute(
+            """SELECT * FROM enquiries
+               WHERE (? = '' OR first_name LIKE ? OR last_name LIKE ? OR company LIKE ? OR email LIKE ? OR phone LIKE ? OR message LIKE ? OR country LIKE ?)
+                 AND (? = '' OR status = ?)
+               ORDER BY id DESC""",
+            (flag, like, like, like, like, like, like, like, status, status),
+        ).fetchall()
+        con.close()
+        return self.end_json(200, {"items": [public_enquiry(row) for row in rows]})
+
+    def get_enquiry(self, item_id):
+        con = connect()
+        row = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
+        con.close()
+        if not row:
+            return self.end_json(404, {"error": "not_found"})
+        return self.end_json(200, public_enquiry(row))
+
+    def update_enquiry(self, item_id, body):
+        con = connect()
+        current = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
+        if not current:
+            con.close()
+            return self.end_json(404, {"error": "not_found"})
+        merged = public_enquiry(current)
+        merged.update(body)
+        record = normalize(merged)
+        field = missing(record)
+        if field:
+            con.close()
+            return self.end_json(400, {"error": "required", "field": field})
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        con.execute(
+            """UPDATE enquiries SET locale=?, first_name=?, last_name=?, company=?, email=?, phone=?, country=?, services=?, message=?, status=?, notes=?, updated_at=? WHERE id=?""",
+            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], now, item_id),
+        )
+        con.commit()
+        row = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
+        con.close()
+        return self.end_json(200, public_enquiry(row))
+
+    def delete_enquiry(self, item_id):
+        con = connect()
+        cur = con.execute("DELETE FROM enquiries WHERE id = ?", (item_id,))
+        con.commit()
+        con.close()
+        if cur.rowcount == 0:
+            return self.end_json(404, {"error": "not_found"})
+        return self.end_json(200, {"ok": True})
+
+    def list_users(self):
+        con = connect()
+        rows = con.execute("SELECT * FROM users ORDER BY id").fetchall()
+        con.close()
+        return self.end_json(200, {"items": [public_user(row) for row in rows]})
+
+    def create_user(self, body):
+        email = str(body.get("email") or "").strip().lower()
+        name = str(body.get("name") or "").strip()
+        password = str(body.get("password") or "")
+        if "@" not in email or not name or len(password) < 8:
+            return self.end_json(400, {"error": "required"})
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        con = connect()
+        try:
+            con.execute(
+                "INSERT INTO users (email, name, password_hash, role, active, created_at, updated_at) VALUES (?, ?, ?, 'admin', 1, ?, ?)",
+                (email, name, hash_password(password), now, now),
+            )
+            con.commit()
+        except sqlite3.IntegrityError:
+            con.close()
+            return self.end_json(409, {"error": "duplicate"})
+        row = con.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        con.close()
+        return self.end_json(201, public_user(row))
+
+    def update_user(self, item_id, body, actor):
+        con = connect()
+        current = con.execute("SELECT * FROM users WHERE id = ?", (item_id,)).fetchone()
+        if not current:
+            con.close()
+            return self.end_json(404, {"error": "not_found"})
+        email = str(body.get("email") or current["email"]).strip().lower()
+        name = str(body.get("name") or current["name"]).strip()
+        active = current["active"] if "active" not in body else (1 if body.get("active") else 0)
+        if "@" not in email or not name:
+            con.close()
+            return self.end_json(400, {"error": "required"})
+        others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND id != ?", (item_id,)).fetchone()["n"]
+        if current["active"] and not active and others == 0:
+            con.close()
+            return self.end_json(400, {"error": "last_admin"})
+        stored = current["password_hash"]
+        if body.get("password"):
+            if len(str(body["password"])) < 8:
+                con.close()
+                return self.end_json(400, {"error": "password"})
+            stored = hash_password(str(body["password"]))
+        try:
+            now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            con.execute("UPDATE users SET email=?, name=?, password_hash=?, active=?, updated_at=? WHERE id=?", (email, name, stored, active, now, item_id))
+            con.commit()
+        except sqlite3.IntegrityError:
+            con.close()
+            return self.end_json(409, {"error": "duplicate"})
+        row = con.execute("SELECT * FROM users WHERE id = ?", (item_id,)).fetchone()
+        con.close()
+        return self.end_json(200, public_user(row))
+
+    def delete_user(self, item_id, actor):
+        if actor["id"] == item_id:
+            return self.end_json(400, {"error": "self"})
+        con = connect()
+        current = con.execute("SELECT * FROM users WHERE id = ?", (item_id,)).fetchone()
+        if not current:
+            con.close()
+            return self.end_json(404, {"error": "not_found"})
+        others = con.execute("SELECT COUNT(*) AS n FROM users WHERE active = 1 AND id != ?", (item_id,)).fetchone()["n"]
+        if current["active"] and others == 0:
+            con.close()
+            return self.end_json(400, {"error": "last_admin"})
+        con.execute("DELETE FROM users WHERE id = ?", (item_id,))
+        con.commit()
+        con.close()
+        return self.end_json(200, {"ok": True})
+
+
+if __name__ == "__main__":
+    connect().close()
+    print("Northgo API on http://127.0.0.1:8787")
+    ThreadingHTTPServer(("127.0.0.1", 8787), Handler).serve_forever()

@@ -1,0 +1,15 @@
+name = "northgo-admin"
+main = "src/index.js"
+compatibility_date = "2026-11-25"
+
+[vars]
+APP_VERSION = "0.1.0"
+
+# Create the database, then replace database_id:
+#   wrangler d1 create northgo
+#   wrangler d1 execute northgo --remote --file=schema.sql
+#   wrangler secret put SESSION_SECRET
+[[d1_databases]]
+binding = "DB"
+database_name = "northgo"
+database_id = "00000000-0000-0000-0000-000000000000"

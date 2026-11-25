@@ -31,11 +31,12 @@
 @media(max-width:860px){.locations-canvas{overflow-x:auto}#locations-svg[data-region=all]{width:760px;max-width:none;height:auto}}
 
 .hero-cover{background:#eef6f8;color:#0a1b33}
-.hero-cover-shade{background:linear-gradient(90deg,#f7fbfc 0%,#f7fbfcf5 32%,#f7fbfcb8 56%,#f7fbfc40 100%)}
+.hero-cover-shade{background:linear-gradient(90deg,rgba(247,251,252,.55) 0%,rgba(247,251,252,.08) 42%,transparent 68%)}
+.hero-cover-content{background:#f7fbfc;border-radius:20px;padding:1.25rem 1.35rem 1.4rem;max-width:34rem}
 .hero-cover .eyebrow{color:#087a86}
 .hero-cover h1{color:#0a1b33}
 .hero-cover .lede{color:#3e5563}
-.hero-cover-media{object-position:62% center}
+.hero-cover-media{object-position:center 42%}
 .hero-cover .hero-actions .btn-light{border-color:#0a1b33;color:#0a1b33;background:transparent}
 .hero-cover .hero-actions .btn-light:hover{background:#0a1b3312;color:#0a1b33}
 .hero-cover .hero-actions .btn-light:first-child{background:#00bfbf;border-color:#00bfbf;color:#0a1b33}

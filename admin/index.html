@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northgo 後台</title>
+  <link rel="icon" href="/northgo-ai/favicon.png">
+  <script src="/northgo-ai/assets/site-config.js"></script>
+  <style>
+    :root { --navy:#0a1b33; --ink:#0a1b33; --muted:#5d6c7b; --line:#d7e0e8; --paper:#f4f7f8; --card:#fff; --cyan:#00bfbf; --deep:#087a86; --radius:16px; --font:"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif; }
+    * { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; font-family:var(--font); color:var(--ink); background:var(--paper); }
+    button, input, select, textarea { font:inherit; }
+    button { cursor:pointer; }
+    .login { min-height:100vh; display:grid; grid-template-columns:1.15fr .85fr; }
+    .login-visual { position:relative; background:#083044 center/cover no-repeat; color:#fff; display:flex; align-items:flex-end; padding:2.5rem; }
+    .login-visual:after { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(10,27,51,.15),rgba(10,27,51,.72)); }
+    .login-visual div { position:relative; z-index:1; max-width:28rem; }
+    .login-visual h1 { margin:.4rem 0; font-size:clamp(2rem,4vw,3.2rem); }
+    .login-panel { display:flex; align-items:center; justify-content:center; padding:2rem; background:#fff; }
+    .card { width:min(100%,420px); }
+    .logo { font-weight:800; letter-spacing:-.04em; font-size:1.7rem; color:var(--navy); }
+    .logo span { color:var(--cyan); }
+    label { display:flex; flex-direction:column; gap:.35rem; font-weight:650; margin-top:.9rem; }
+    input, select, textarea { border:1px solid var(--line); border-radius:12px; min-height:46px; padding:.65rem .8rem; background:#fff; color:inherit; }
+    textarea { min-height:110px; resize:vertical; }
+    .btn { border:0; border-radius:999px; min-height:44px; padding:.55rem 1.1rem; background:var(--cyan); color:var(--navy); font-weight:750; }
+    .btn.ghost { background:#fff; border:1px solid var(--line); }
+    .btn.warn { background:#fff4ec; color:#8a3d12; }
+    .error { color:#8a3d12; background:#fff4ec; border-radius:12px; padding:.7rem .85rem; margin-top:.8rem; }
+    .version { color:var(--muted); font-size:.88rem; margin-top:1.2rem; }
+    .shell { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
+    aside { background:var(--navy); color:#e7f4f8; display:flex; flex-direction:column; padding:1.2rem 1rem; }
+    aside .logo { color:#fff; }
+    aside nav { display:grid; gap:.35rem; margin-top:1.4rem; }
+    aside nav button { text-align:left; border:0; background:transparent; color:#d5e4ea; border-radius:12px; min-height:44px; padding:.55rem .75rem; font-weight:700; }
+    aside nav button[aria-current="page"] { background:#13264b; color:#fff; }
+    aside .version { margin-top:auto; color:#9fe9e9; }
+    main { padding:1.25rem; }
+    header.bar { display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-bottom:1rem; }
+    h2 { margin:0; font-size:1.6rem; }
+    .tools { display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1rem; }
+    .tools input, .tools select { min-width:12rem; background:#fff; }
+    table { width:100%; border-collapse:collapse; background:#fff; border-radius:16px; overflow:hidden; }
+    th, td { text-align:left; padding:.75rem .85rem; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { font-size:.78rem; letter-spacing:.04em; color:var(--muted); }
+    tr.clickable { cursor:pointer; }
+    tr.clickable:hover { background:#f7fbfc; }
+    .pill { display:inline-flex; border-radius:999px; padding:.15rem .55rem; font-size:.78rem; font-weight:750; background:#e7f8f8; color:var(--deep); }
+    .pill.new { background:#e7f8f8; }
+    .pill.in_progress { background:#fff6d8; color:#7a5b00; }
+    .pill.closed { background:#eef1f4; color:#52606d; }
+    .who { display:flex; gap:.7rem; align-items:center; }
+    .avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; color:#0a1b33; font-weight:800; background-size:cover; background-position:center; }
+    .empty { background:#fff; border:1px dashed var(--line); border-radius:16px; padding:2rem; color:var(--muted); }
+    dialog { border:0; border-radius:18px; padding:0; width:min(640px,calc(100% - 2rem)); box-shadow:0 24px 60px rgba(10,27,51,.18); }
+    dialog form { padding:1.2rem 1.2rem 1.3rem; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+    .actions { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:flex-end; margin-top:1rem; }
+    .check { flex-direction:row; align-items:center; font-weight:600; }
+    @media (max-width:860px) {
+      .login, .shell { grid-template-columns:1fr; }
+      .login-visual { min-height:220px; }
+      aside nav { grid-template-columns:1fr 1fr; }
+      .row2 { grid-template-columns:1fr; }
+      table { display:block; overflow-x:auto; }
+    }
+  </style>
+</head>
+<body>
+  <section class="login" id="login">
+    <div class="login-visual" style="background-image:url('/northgo-ai/images/freight-hero.jpg')">
+      <div>
+        <p class="logo">North<span>go</span></p>
+        <h1>客戶詢問，集中在這裡。</h1>
+        <p>前台送出的詢價會出現在客戶詢問。多位管理者可以一起維護。</p>
+      </div>
+    </div>
+    <div class="login-panel">
+      <form class="card" id="login-form">
+        <p class="logo">North<span>go</span></p>
+        <h2>後台登入</h2>
+        <label>電子郵件<input type="email" name="email" autocomplete="username" required value="admin@northgo.com"></label>
+        <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
+        <p class="error" id="login-error" hidden></p>
+        <div class="actions"><button class="btn" type="submit">登入</button></div>
+        <p class="version">版本 <span data-version>0.1.0</span></p>
+      </form>
+    </div>
+  </section>
+  <div class="shell" id="app" hidden>
+    <aside>
+      <p class="logo">North<span>go</span></p>
+      <nav>
+        <button type="button" data-view="enquiries" aria-current="page">客戶詢問</button>
+        <button type="button" data-view="users">使用者管理</button>
+      </nav>
+      <p class="version">版本 <span data-version>0.1.0</span></p>
+      <button class="btn ghost" type="button" id="logout" style="margin-top:.8rem">登出</button>
+    </aside>
+    <main>
+      <header class="bar">
+        <div>
+          <h2 id="title">客戶詢問</h2>
+          <p id="hint" style="margin:.25rem 0 0;color:#5d6c7b"></p>
+        </div>
+        <button class="btn" type="button" id="create">新增</button>
+      </header>
+      <p class="error" id="banner" hidden></p>
+      <div id="view"></div>
+    </main>
+  </div>
+  <dialog id="editor"><form id="editor-form"></form></dialog>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
+    const VERSION = window.NORTHGO_VERSION || "0.1.0";
+    document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
+    const tokenKey = "northgo-admin-token";
+    const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
+    const statusNames = { new: "新進", in_progress: "處理中", closed: "已結案" };
+    let view = "enquiries";
+    let me = null;
+
+    function token() { return sessionStorage.getItem(tokenKey) || ""; }
+    async function api(path, options) {
+      if (!API) throw new Error("offline");
+      const headers = Object.assign({ Authorization: "Bearer " + token() }, (options && options.headers) || {});
+      const response = await fetch(API + path, Object.assign({}, options, { headers }));
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || "failed"), { status: response.status, data });
+      return data;
+    }
+    function showLogin(message) {
+      document.getElementById("app").hidden = true;
+      document.getElementById("login").hidden = false;
+      const error = document.getElementById("login-error");
+      error.hidden = !message;
+      error.textContent = message || "";
+    }
+    function showApp() {
+      document.getElementById("login").hidden = true;
+      document.getElementById("app").hidden = false;
+      render();
+    }
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      try {
+        const data = await fetch(API + "/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: form.get("email"), password: form.get("password") }) }).then(async (response) => {
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.error || "invalid");
+          return body;
+        });
+        sessionStorage.setItem(tokenKey, data.token);
+        if (data.version) document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = data.version; });
+        me = data.user;
+        showApp();
+      } catch (error) {
+        showLogin(!API ? "後台 API 尚未連線。GitHub Pages 沒有資料庫，請先部署 Cloudflare Worker。" : "帳號或密碼不正確。");
+      }
+    });
+    document.getElementById("logout").addEventListener("click", () => { sessionStorage.removeItem(tokenKey); showLogin(); });
+    document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => { view = button.dataset.view; render(); }));
+    document.getElementById("create").addEventListener("click", () => openEditor(view === "users" ? { kind: "user" } : { kind: "enquiry", services: [] }));
+
+    function avatar(name) {
+      const colors = ["#b7efe8", "#c9ddff", "#ffe3b8", "#f7d0e0", "#d9f2c8"];
+      const letter = (name || "?").trim().slice(0, 1).toUpperCase();
+      const color = colors[(name || "").length % colors.length];
+      return `<span class="avatar" style="background:${color}">${letter}</span>`;
+    }
+    function banner(text) {
+      const node = document.getElementById("banner");
+      node.hidden = !text;
+      node.textContent = text || "";
+    }
+    async function render() {
+      document.querySelectorAll("[data-view]").forEach((button) => {
+      if (button.dataset.view === view) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
+      document.getElementById("title").textContent = view === "users" ? "使用者管理" : "客戶詢問";
+      document.getElementById("hint").textContent = view === "users" ? "可以新增多位管理者，一起維護前台詢問。" : "前台聯絡表單送出後，內容會列在這裡。";
+      document.getElementById("create").textContent = view === "users" ? "新增管理者" : "新增詢問";
+      const host = document.getElementById("view");
+      try {
+        host.innerHTML = view === "users" ? await usersView() : await enquiriesView();
+      } catch (error) {
+        host.innerHTML = "";
+        banner(error.message === "offline" ? "後台 API 尚未連線，所以還查不到詢問。" : "讀取失敗，請重新登入。");
+        if (error.status === 401) showLogin("登入已過期。");
+      }
+    }
+    async function enquiriesView() {
+      const q = document.getElementById("q") ? document.getElementById("q").value : "";
+      const status = document.getElementById("status") ? document.getElementById("status").value : "";
+      const data = await api("/api/enquiries?q=" + encodeURIComponent(q) + "&status=" + encodeURIComponent(status));
+      banner("");
+      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td>${item.createdAt.slice(0, 16).replace("T", " ")}</td><td><div class="who">${avatar(item.company)}<div><strong>${escapeHtml(item.company)}</strong><div>${escapeHtml(item.lastName)}${escapeHtml(item.firstName)}</div></div></div></td><td>${escapeHtml(item.email)}<br>${escapeHtml(item.phone)}</td><td>${item.services.map((name) => serviceNames[name] || name).join("、") || "—"}</td><td><span class="pill ${item.status}">${statusNames[item.status] || item.status}</span></td></tr>`).join("");
+      const options = [["", "全部狀態"], ["new", "新進"], ["in_progress", "處理中"], ["closed", "已結案"]].map(([value, label]) => `<option value="${value}"${status === value ? " selected" : ""}>${label}</option>`).join("");
+      return `<div class="tools"><input id="q" placeholder="搜尋公司、姓名、信箱" value="${escapeHtml(q)}"><select id="status">${options}</select><button class="btn ghost" type="button" id="search">查詢</button></div>${rows ? `<table><thead><tr><th>時間</th><th>公司</th><th>聯絡</th><th>服務</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">沒有符合的詢問。</div>`}`;
+    }
+    async function usersView() {
+      const data = await api("/api/users");
+      banner("");
+      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td><div class="who">${avatar(item.name)}<div><strong>${escapeHtml(item.name)}</strong><div>${escapeHtml(item.email)}</div></div></div></td><td>${item.active ? "使用中" : "已停用"}</td><td>${item.id === me.id ? "目前登入" : "管理者"}</td></tr>`).join("");
+      return `<table><thead><tr><th>管理者</th><th>狀態</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    document.getElementById("view").addEventListener("click", async (event) => {
+      if (event.target.id === "search") return render();
+      const row = event.target.closest("[data-id]");
+      if (!row) return;
+      if (view === "users") {
+        const data = await api("/api/users");
+        openEditor(Object.assign({ kind: "user" }, data.items.find((item) => String(item.id) === row.dataset.id)));
+      } else {
+        openEditor(Object.assign({ kind: "enquiry" }, await api("/api/enquiries/" + row.dataset.id)));
+      }
+    });
+    document.getElementById("view").addEventListener("change", (event) => { if (event.target.id === "status") render(); });
+    document.getElementById("view").addEventListener("keydown", (event) => { if (event.key === "Enter" && event.target.id === "q") render(); });
+
+    function openEditor(item) {
+      const form = document.getElementById("editor-form");
+      form.innerHTML = item.kind === "user" ? userForm(item) : enquiryForm(item);
+      document.getElementById("editor").showModal();
+    }
+    function enquiryForm(item) {
+      const checks = Object.entries(serviceNames).map(([value, label]) => `<label class="check"><input type="checkbox" name="services" value="${value}" ${item.services && item.services.includes(value) ? "checked" : ""}> ${label}</label>`).join("");
+      return `<h2>${item.id ? "編輯詢問" : "新增詢問"}</h2><div class="row2"><label>名字<input name="firstName" required value="${escapeHtml(item.firstName || "")}"></label><label>姓氏<input name="lastName" required value="${escapeHtml(item.lastName || "")}"></label></div><label>公司<input name="company" required value="${escapeHtml(item.company || "")}"></label><div class="row2"><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>電話<input name="phone" required value="${escapeHtml(item.phone || "")}"></label></div><div class="row2"><label>國家<input name="country" required value="${escapeHtml(item.country || "")}"></label><label>狀態<select name="status">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="row2">${checks}</div><label>訊息<textarea name="message" required>${escapeHtml(item.message || "")}</textarea></label><label>內部備註<textarea name="notes">${escapeHtml(item.notes || "")}</textarea></label><input type="hidden" name="id" value="${item.id || ""}"><div class="actions">${item.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+    }
+    function userForm(item) {
+      return `<h2>${item.id ? "編輯管理者" : "新增管理者"}</h2><label>姓名<input name="name" required value="${escapeHtml(item.name || "")}"></label><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>密碼<input name="password" type="password" ${item.id ? "" : "required"} minlength="8" placeholder="${item.id ? "留白表示不改密碼" : "至少 8 碼"}"></label><label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 可登入</label><input type="hidden" name="id" value="${item.id || ""}"><div class="actions">${item.id && item.id !== me.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+    }
+    document.getElementById("editor-form").addEventListener("click", async (event) => {
+      if (event.target.id === "cancel") document.getElementById("editor").close();
+      if (event.target.id !== "remove") return;
+      const id = new FormData(event.currentTarget).get("id");
+      if (!confirm("確定刪除？")) return;
+      await api((view === "users" ? "/api/users/" : "/api/enquiries/") + id, { method: "DELETE" });
+      document.getElementById("editor").close();
+      render();
+    });
+    document.getElementById("editor-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const id = form.get("id");
+      try {
+        if (view === "users") {
+          const body = { name: form.get("name"), email: form.get("email"), active: form.get("active") === "on" };
+          if (form.get("password")) body.password = form.get("password");
+          await api("/api/users" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        } else {
+          const body = { firstName: form.get("firstName"), lastName: form.get("lastName"), company: form.get("company"), email: form.get("email"), phone: form.get("phone"), country: form.get("country"), message: form.get("message"), notes: form.get("notes"), status: form.get("status"), services: form.getAll("services") };
+          await api("/api/enquiries" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        }
+        document.getElementById("editor").close();
+        render();
+      } catch (error) {
+        alert(error.data && error.data.error === "last_admin" ? "至少要留下一位可登入的管理者。" : "儲存失敗。");
+      }
+    });
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char])); }
+    if (token() && API) {
+      api("/api/me").then((data) => { me = data.user; if (data.version) document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = data.version; }); showApp(); }).catch(() => showLogin());
+    } else if (!API) {
+      showLogin("後台 API 尚未連線。GitHub Pages 沒有資料庫，請先部署 Cloudflare Worker。");
+    }
+  </script>
+</body>
+</html>
