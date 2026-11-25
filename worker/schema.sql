@@ -43,15 +43,18 @@ CREATE TABLE IF NOT EXISTS menus (
 );
 
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
-SELECT 1, NULL, '內容管理', '', 10, 'admin,editor', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 1);
+SELECT 1, NULL, '內容管理', '', 10, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 1);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
-SELECT 2, 1, '客戶詢問', 'enquiries', 10, 'admin,editor', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 2);
+SELECT 2, 1, '客戶詢問', 'enquiries', 10, 'admin,sales,support', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 2);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
-SELECT 3, 1, '網站內容', 'content', 20, 'admin,editor', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 3);
+SELECT 3, 1, '網站內容', 'content', 20, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 3);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
-SELECT 4, 1, '媒體', 'media', 30, 'admin,editor', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 4);
+SELECT 4, 1, '媒體', 'media', 30, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 4);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
-SELECT 5, 1, '動態頁面', 'pages', 40, 'admin,editor', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 5);
+SELECT 5, 1, '動態頁面', 'pages', 40, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 5);
+UPDATE users SET role = 'sales' WHERE role = 'editor';
+UPDATE menus SET roles = 'admin' WHERE id IN (1, 3, 4, 5);
+UPDATE menus SET roles = 'admin,sales,support' WHERE id = 2;
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)
 SELECT 6, NULL, '系統設定', '', 20, 'admin', 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = 6);
 INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active)

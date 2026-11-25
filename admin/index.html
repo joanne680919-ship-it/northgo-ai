@@ -41,7 +41,8 @@
     .me-chip { display:flex; align-items:center; gap:.55rem; margin-right:.4rem; }
     .me-chip small { display:block; color:#b7c3d0; font-weight:600; }
     .role-pill { display:inline-flex; align-items:center; gap:.2rem; border-radius:999px; padding:.12rem .55rem; font-size:.75rem; font-weight:750; background:#e7f8f4; color:#0f766e; white-space:nowrap; }
-    .role-pill.editor { background:#e8f0ff; color:#1d4ed8; }
+    .role-pill.sales { background:#e8f0ff; color:#1d4ed8; }
+    .role-pill.support { background:#fff4e5; color:#9a3412; }
     .top .btn { background:#fff; color:var(--navy); }
     .frame { display:grid; grid-template-columns:232px 1fr; min-height:0; }
     aside { background:#181818; color:#cccccc; padding:0; display:flex; flex-direction:column; min-height:0; overflow:auto; }
@@ -111,13 +112,13 @@
         <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
         <p class="error" id="login-error" hidden></p>
         <div class="actions-row"><button class="btn" type="submit">登入</button></div>
-        <p class="version">版本 <span data-version>0.1.3</span></p>
+        <p class="version">版本 <span data-version>0.1.4</span></p>
       </form>
     </div>
   </section>
   <div class="app" id="app" hidden>
     <header class="top">
-      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.3</span></span></div>
+      <div class="brand">North<span>go</span> <span class="product">後台管理</span> <span class="ver">v<span data-version>0.1.4</span></span></div>
       <div class="top-actions">
         <div class="me-chip" id="me-chip"></div>
         <button class="btn" type="button" id="account">我的帳號</button>
@@ -139,13 +140,13 @@
   <script>
     const params = new URLSearchParams(location.search);
     const API = (params.get("api") || window.NORTHGO_API || "").replace(/\/$/, "");
-    const VERSION = window.NORTHGO_VERSION || "0.1.3";
+    const VERSION = window.NORTHGO_VERSION || "0.1.4";
     document.querySelectorAll("[data-version]").forEach((node) => { node.textContent = VERSION; });
     const tokenKey = "northgo-admin-token";
     const serviceNames = { freight: "貨運物流", project: "專案物流", warehouse: "倉儲物流", shipping: "船務代理", other: "其他" };
-    const statusNames = { new: "新進", in_progress: "處理中", closed: "已結案" };
+    const statusNames = { new: "新進", in_progress: "處理中", closed: "已回覆" };
     const viewNames = { enquiries: "客戶詢問", content: "網站內容", media: "媒體", pages: "動態頁面", users: "使用者", menus: "選單管理" };
-    const roleNames = { admin: "管理者", editor: "編輯者" };
+    const roleNames = { admin: "管理員", sales: "業務", support: "客服" };
     let view = "users";
     let me = null;
     let menus = [];
@@ -297,7 +298,7 @@
         <td>${formatTime(item.lastLoginAt)}</td>
         <td><div class="ops"><button class="icon edit" type="button" data-edit="${item.id}" aria-label="編輯">✎</button><button class="icon del" type="button" data-del="${item.id}" aria-label="刪除">🗑</button></div></td>
       </tr>`).join("");
-      const roleOptions = [["", "全部"], ["admin", "管理者"], ["editor", "編輯者"]].map(([value, label]) => `<option value="${value}"${userState.role === value ? " selected" : ""}>${label}</option>`).join("");
+      const roleOptions = [["", "全部"], ...Object.entries(roleNames)].map(([value, label]) => `<option value="${value}"${userState.role === value ? " selected" : ""}>${label}</option>`).join("");
       return `<section class="panel"><div class="panel-head">使用者</div>
         <form class="tools" id="user-tools">
           <label class="grow">搜尋<input id="q" placeholder="帳號、顯示名稱、角色" value="${escapeHtml(userState.q)}"></label>
@@ -348,9 +349,11 @@
       const q = document.getElementById("q") ? document.getElementById("q").value : "";
       const status = document.getElementById("status") ? document.getElementById("status").value : "";
       const data = await api("/api/enquiries?q=" + encodeURIComponent(q) + "&status=" + encodeURIComponent(status));
-      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td>${item.createdAt.slice(0, 16).replace("T", " ")}</td><td><div class="who">${avatar(item.company, true)}<div><strong>${escapeHtml(item.company)}</strong><div>${escapeHtml(item.lastName)}${escapeHtml(item.firstName)}</div></div></div></td><td>${escapeHtml(item.email)}<br>${escapeHtml(item.phone)}</td><td>${item.services.map((name) => serviceNames[name] || name).join("、") || "—"}</td><td><span class="role-pill">${statusNames[item.status] || item.status}</span></td></tr>`).join("");
-      const options = [["", "全部狀態"], ["new", "新進"], ["in_progress", "處理中"], ["closed", "已結案"]].map(([value, label]) => `<option value="${value}"${status === value ? " selected" : ""}>${label}</option>`).join("");
-      return `<section class="panel"><div class="panel-head">客戶詢問</div><div class="tools"><label class="grow">搜尋<input id="q" placeholder="公司、姓名、信箱" value="${escapeHtml(q)}"></label><label>狀態<select id="status">${options}</select></label><div class="actions"><button class="btn ghost" type="button" id="search">查詢</button><button class="btn" type="button" id="create">新增詢問</button></div></div>${rows ? `<table><thead><tr><th>時間</th><th>公司</th><th>聯絡</th><th>服務</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">沒有符合的詢問。</div>`}</section>`;
+      const assignees = (await api("/api/assignees")).items;
+      const assigneeNames = Object.fromEntries(assignees.map((person) => [person.id, person.name]));
+      const rows = data.items.map((item) => `<tr class="clickable" data-id="${item.id}"><td>${item.createdAt.slice(0, 16).replace("T", " ")}</td><td><div class="who">${avatar(item.company, true)}<div><strong>${escapeHtml(item.company)}</strong><div>${escapeHtml(item.lastName)}${escapeHtml(item.firstName)}</div></div></div></td><td>${escapeHtml(item.email)}<br>${escapeHtml(item.phone)}</td><td>${item.services.map((name) => serviceNames[name] || name).join("、") || "—"}</td><td>${escapeHtml(assigneeNames[item.assigneeId] || "未指派")}</td><td><span class="role-pill">${statusNames[item.status] || item.status}</span></td></tr>`).join("");
+      const options = [["", "全部狀態"], ...Object.entries(statusNames)].map(([value, label]) => `<option value="${value}"${status === value ? " selected" : ""}>${label}</option>`).join("");
+      return `<section class="panel"><div class="panel-head">客戶詢問</div><div class="tools"><label class="grow">搜尋<input id="q" placeholder="公司、姓名、信箱" value="${escapeHtml(q)}"></label><label>狀態<select id="status">${options}</select></label><div class="actions"><button class="btn ghost" type="button" id="search">查詢</button>${me.role === "support" ? "" : `<button class="btn" type="button" id="create">新增詢問</button>`}</div></div>${rows ? `<table><thead><tr><th>時間</th><th>公司</th><th>聯絡</th><th>服務</th><th>負責人</th><th>狀態</th></tr></thead><tbody>${rows}</tbody></table>` : `<div class="empty">沒有符合的詢問。</div>`}</section>`;
     }
     document.getElementById("view").addEventListener("click", async (event) => {
       if (event.target.id === "settings") return openSettings();
@@ -369,14 +372,15 @@
         return render();
       }
       if (event.target.id === "create") {
-        return openEditor(view === "users" ? { kind: "user", role: "editor", active: true } : view === "menus" ? { kind: "menu", roles: ["admin"], active: true, sortOrder: 30 } : { kind: "enquiry", services: [] });
+        if (view === "enquiries") return openEnquiry({ services: [] });
+        return openEditor(view === "users" ? { kind: "user", role: "sales", active: true } : { kind: "menu", roles: ["admin"], active: true, sortOrder: 30 });
       }
       if (event.target.dataset.edit) return openUser(event.target.dataset.edit);
       if (event.target.dataset.del) return removeUser(event.target.dataset.del);
       if (event.target.dataset.menu) return openMenu(event.target.dataset.menu);
       if (event.target.dataset.menuDel) return removeMenu(event.target.dataset.menuDel);
       const row = event.target.closest("[data-id]");
-      if (row && view === "enquiries") openEditor(Object.assign({ kind: "enquiry" }, await api("/api/enquiries/" + row.dataset.id)));
+      if (row && view === "enquiries") return openEnquiry(await api("/api/enquiries/" + row.dataset.id));
     });
     document.getElementById("view").addEventListener("change", (event) => {
       if (view === "users" && (event.target.id === "role" || event.target.id === "pageSize")) { readUserTools(); userState.page = 1; render(); }
@@ -430,15 +434,24 @@
         <label>名稱<input name="label" required value="${escapeHtml(item.label || "")}"></label>
         <div class="row2"><label>上層<select name="parentId"><option value="">（群組）</option>${parents}</select></label><label>功能<select name="viewKey"><option value="">群組，沒有頁面</option>${views}</select></label></div>
         <label>排序<input name="sortOrder" type="number" value="${item.sortOrder || 0}"></label>
-        <label class="check"><input type="checkbox" name="role-admin" ${!item.roles || item.roles.includes("admin") ? "checked" : ""}> 管理者可見</label>
-        <label class="check"><input type="checkbox" name="role-editor" ${item.roles && item.roles.includes("editor") ? "checked" : ""}> 編輯者可見</label>
+        <label class="check"><input type="checkbox" name="role-admin" ${!item.roles || item.roles.includes("admin") ? "checked" : ""}> 管理員可見</label>
+        <label class="check"><input type="checkbox" name="role-sales" ${item.roles && item.roles.includes("sales") ? "checked" : ""}> 業務可見</label>
+        <label class="check"><input type="checkbox" name="role-support" ${item.roles && item.roles.includes("support") ? "checked" : ""}> 客服可見</label>
         <label class="check"><input type="checkbox" name="active" ${item.active !== false ? "checked" : ""}> 顯示</label>
         <input type="hidden" name="kind" value="menu"><input type="hidden" name="id" value="${item.id || ""}">
         <div class="actions-row"><button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
     }
+    async function openEnquiry(item) {
+      const assignees = me.role === "support" ? [] : (await api("/api/assignees")).items;
+      openEditor(Object.assign({ kind: "enquiry", assignees }, item));
+    }
     function enquiryForm(item) {
-      const checks = Object.entries(serviceNames).map(([value, label]) => `<label class="check"><input type="checkbox" name="services" value="${value}" ${item.services && item.services.includes(value) ? "checked" : ""}> ${label}</label>`).join("");
-      return `<h2>${item.id ? "編輯詢問" : "新增詢問"}</h2><div class="row2"><label>名字<input name="firstName" required value="${escapeHtml(item.firstName || "")}"></label><label>姓氏<input name="lastName" required value="${escapeHtml(item.lastName || "")}"></label></div><label>公司<input name="company" required value="${escapeHtml(item.company || "")}"></label><div class="row2"><label>電子郵件<input name="email" type="email" required value="${escapeHtml(item.email || "")}"></label><label>電話<input name="phone" required value="${escapeHtml(item.phone || "")}"></label></div><div class="row2"><label>國家<input name="country" required value="${escapeHtml(item.country || "")}"></label><label>狀態<select name="status">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div><div class="row2">${checks}</div><label>訊息<textarea name="message" required>${escapeHtml(item.message || "")}</textarea></label><label>內部備註<textarea name="notes">${escapeHtml(item.notes || "")}</textarea></label><input type="hidden" name="kind" value="enquiry"><input type="hidden" name="id" value="${item.id || ""}"><div class="actions-row">${item.id ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
+      const locked = item.id && me.role !== "admin";
+      const lock = locked ? "disabled" : "";
+      const checks = Object.entries(serviceNames).map(([value, label]) => `<label class="check"><input type="checkbox" name="services" value="${value}" ${lock} ${item.services && item.services.includes(value) ? "checked" : ""}> ${label}</label>`).join("");
+      const statuses = me.role === "support" ? [["in_progress", "處理中"]] : Object.entries(statusNames);
+      const assignee = me.role === "support" ? "" : `<label>負責人<select name="assigneeId"><option value="">未指派</option>${(item.assignees || []).map((person) => `<option value="${person.id}" ${String(item.assigneeId) === String(person.id) ? "selected" : ""}>${escapeHtml(person.name)}（${escapeHtml(roleNames[person.role] || person.role)}）</option>`).join("")}</select></label>`;
+      return `<h2>${item.id ? "編輯詢問" : "新增詢問"}</h2><div class="row2"><label>名字<input name="firstName" ${lock || "required"} value="${escapeHtml(item.firstName || "")}"></label><label>姓氏<input name="lastName" ${lock || "required"} value="${escapeHtml(item.lastName || "")}"></label></div><label>公司<input name="company" ${lock || "required"} value="${escapeHtml(item.company || "")}"></label><div class="row2"><label>電子郵件<input name="email" type="email" ${lock || "required"} value="${escapeHtml(item.email || "")}"></label><label>電話<input name="phone" ${lock || "required"} value="${escapeHtml(item.phone || "")}"></label></div><div class="row2"><label>國家<input name="country" ${lock || "required"} value="${escapeHtml(item.country || "")}"></label><label>狀態<select name="status">${statuses.map(([value, label]) => `<option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></label></div>${assignee}<div class="row2">${checks}</div><label>訊息<textarea name="message" ${lock || "required"}>${escapeHtml(item.message || "")}</textarea></label><label>內部備註<textarea name="notes">${escapeHtml(item.notes || "")}</textarea></label><input type="hidden" name="kind" value="enquiry"><input type="hidden" name="id" value="${item.id || ""}"><div class="actions-row">${item.id && me.role === "admin" ? `<button class="btn warn" type="button" id="remove">刪除</button>` : ""}<button class="btn ghost" type="button" id="cancel">取消</button><button class="btn" type="submit">儲存</button></div>`;
     }
     document.getElementById("editor-form").addEventListener("click", async (event) => {
       if (event.target.id === "cancel") document.getElementById("editor").close();
@@ -472,11 +485,16 @@
         } else if (kind === "menu") {
           const roles = [];
           if (form.get("role-admin") === "on") roles.push("admin");
-          if (form.get("role-editor") === "on") roles.push("editor");
+          if (form.get("role-sales") === "on") roles.push("sales");
+          if (form.get("role-support") === "on") roles.push("support");
           const body = { label: form.get("label"), parentId: form.get("parentId") || null, viewKey: form.get("viewKey"), sortOrder: Number(form.get("sortOrder")), roles, active: form.get("active") === "on" };
           await api("/api/menus" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         } else {
-          const body = { firstName: form.get("firstName"), lastName: form.get("lastName"), company: form.get("company"), email: form.get("email"), phone: form.get("phone"), country: form.get("country"), message: form.get("message"), notes: form.get("notes"), status: form.get("status"), services: form.getAll("services") };
+          const body = { notes: form.get("notes"), status: form.get("status") };
+          if (me.role === "admin" || !id) {
+            Object.assign(body, { firstName: form.get("firstName"), lastName: form.get("lastName"), company: form.get("company"), email: form.get("email"), phone: form.get("phone"), country: form.get("country"), message: form.get("message"), services: form.getAll("services") });
+          }
+          if (me.role !== "support") body.assigneeId = form.get("assigneeId") || null;
           await api("/api/enquiries" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         }
         document.getElementById("editor").close();
@@ -487,10 +505,12 @@
     });
     function messageFor(error) {
       const code = error.data && error.data.error;
-      if (code === "last_admin") return "至少要留下一位可登入的管理者。";
+      if (code === "last_admin") return "至少要留下一位可登入的管理員。";
       if (code === "self") return "不能刪除自己的帳號。";
       if (code === "duplicate") return "帳號或電子郵件已存在。";
       if (code === "children") return "請先刪除這個群組底下的選單。";
+      if (code === "status") return "客服只能把狀態改成處理中。";
+      if (code === "assignee") return "請選擇有效的負責人。";
       if (code === "forbidden") return "這個角色不能執行此操作。";
       return "儲存失敗。";
     }

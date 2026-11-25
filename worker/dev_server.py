@@ -12,11 +12,12 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "dev.db"
 SECRET = "northgo-dev-session-secret"
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 STATUSES = {"new", "in_progress", "closed"}
 ROLES = {
-    "admin": {"name": "管理者", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},
-    "editor": {"name": "編輯者", "views": ["enquiries", "content", "media", "pages"]},
+    "admin": {"name": "管理員", "views": ["enquiries", "content", "media", "pages", "users", "menus"]},
+    "sales": {"name": "業務", "views": ["enquiries"]},
+    "support": {"name": "客服", "views": ["enquiries"]},
 }
 VIEW_KEYS = {"", "enquiries", "content", "media", "pages", "users", "menus"}
 
@@ -37,6 +38,12 @@ def connect():
         con.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_username ON users(username)")
     except sqlite3.IntegrityError:
         pass
+    enquiry_columns = {row[1] for row in con.execute("PRAGMA table_info(enquiries)")}
+    if "assignee_id" not in enquiry_columns:
+        con.execute("ALTER TABLE enquiries ADD COLUMN assignee_id INTEGER")
+    con.execute("UPDATE users SET role = 'sales' WHERE role = 'editor'")
+    con.execute("UPDATE menus SET roles = 'admin' WHERE id IN (1, 3, 4, 5)")
+    con.execute("UPDATE menus SET roles = 'admin,sales,support' WHERE id = 2")
     con.commit()
     return con
 
@@ -93,10 +100,11 @@ def verify_password(password, stored):
 
 
 def public_user(row):
-    role = row["role"] if row["role"] in ROLES else "editor"
+    role = row["role"]
+    known = ROLES.get(role)
     return {
         "id": row["id"], "email": row["email"], "username": row["username"] or "", "name": row["name"],
-        "role": role, "roleName": ROLES[role]["name"], "permissions": ROLES[role]["views"],
+        "role": role, "roleName": known["name"] if known else role, "permissions": known["views"] if known else [],
         "active": bool(row["active"]), "lastLoginAt": row["last_login_at"] or "", "createdAt": row["created_at"],
     }
 
@@ -113,7 +121,9 @@ def user_fields(body):
     email = str(body.get("email") or "").strip().lower()
     name = str(body.get("name") or "").strip()
     username = str(body.get("username") or "").strip().lower()
-    role = body.get("role") if body.get("role") in ROLES else "editor"
+    role = body.get("role")
+    if role not in ROLES:
+        return None
     active = 1 if body.get("active", True) else 0
     if "@" not in email or not name or not re.fullmatch(r"[a-z0-9._-]{2,32}", username):
         return None
@@ -126,6 +136,7 @@ def public_enquiry(row):
         "company": row["company"], "email": row["email"], "phone": row["phone"], "country": row["country"],
         "services": [item for item in (row["services"] or "").split(",") if item],
         "message": row["message"], "status": row["status"], "notes": row["notes"],
+        "assigneeId": row["assignee_id"],
         "createdAt": row["created_at"], "updatedAt": row["updated_at"],
     }
 
@@ -159,6 +170,33 @@ def missing(record):
     if "@" not in record["email"]:
         return "email"
     return ""
+
+
+def can_see_enquiry(actor, row):
+    return actor["role"] != "support" or row["assignee_id"] == actor["id"]
+
+
+def enquiry_patch(current, body, actor):
+    base = public_enquiry(current)
+    if actor["role"] == "admin":
+        merged = dict(base)
+        merged.update(body)
+        return normalize(merged)
+    if actor["role"] == "sales":
+        merged = dict(base)
+        if "status" in body:
+            merged["status"] = body.get("status")
+        if "notes" in body:
+            merged["notes"] = body.get("notes")
+        return normalize(merged)
+    if "status" in body and body.get("status") != "in_progress":
+        return {"error": "status"}
+    merged = dict(base)
+    if "notes" in body:
+        merged["notes"] = body.get("notes")
+    if body.get("status") == "in_progress":
+        merged["status"] = "in_progress"
+    return normalize(merged)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -219,12 +257,16 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(401, {"error": "unauthorized"})
         if not row["active"]:
             return self.end_json(403, {"error": "inactive"})
+        if path == "/api/assignees":
+            if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
+            return self.list_assignees()
         if path == "/api/enquiries" or path.startswith("/api/enquiries/"):
             if not allows(row, "enquiries"):
                 return self.end_json(403, {"error": "forbidden"})
             if path == "/api/enquiries":
-                return self.list_enquiries(parse_qs(url.query))
-            return self.get_enquiry(int(path.rsplit("/", 1)[1]))
+                return self.list_enquiries(parse_qs(url.query), row)
+            return self.get_enquiry(int(path.rsplit("/", 1)[1]), row)
         if path == "/api/users":
             if not allows(row, "users"):
                 return self.end_json(403, {"error": "forbidden"})
@@ -251,7 +293,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/enquiries":
             if not allows(row, "enquiries"):
                 return self.end_json(403, {"error": "forbidden"})
-            return self.save_enquiry(body)
+            return self.save_enquiry(body, False, row)
         if path == "/api/users":
             if not allows(row, "users"):
                 return self.end_json(403, {"error": "forbidden"})
@@ -277,7 +319,7 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/enquiries/"):
             if not allows(row, "enquiries"):
                 return self.end_json(403, {"error": "forbidden"})
-            return self.update_enquiry(int(path.rsplit("/", 1)[1]), body)
+            return self.update_enquiry(int(path.rsplit("/", 1)[1]), body, row)
         if path.startswith("/api/users/"):
             if not allows(row, "users"):
                 return self.end_json(403, {"error": "forbidden"})
@@ -297,6 +339,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(403, {"error": "inactive"})
         if path.startswith("/api/enquiries/"):
             if not allows(row, "enquiries"):
+                return self.end_json(403, {"error": "forbidden"})
+            if row["role"] != "admin":
                 return self.end_json(403, {"error": "forbidden"})
             return self.delete_enquiry(int(path.rsplit("/", 1)[1]))
         if path.startswith("/api/users/"):
@@ -330,17 +374,21 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(400, {"error": "terms"})
         return self.save_enquiry(body, public=True)
 
-    def save_enquiry(self, body, public=False):
+    def save_enquiry(self, body, public=False, actor=None):
         record = normalize(body)
         field = missing(record)
         if field:
             return self.end_json(400, {"error": "required", "field": field})
-        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         con = connect()
+        assignee = self.enquiry_assignee(con, body, actor, public)
+        if assignee is False:
+            con.close()
+            return self.end_json(400, {"error": "assignee"})
+        stamp = now()
         cur = con.execute(
-            """INSERT INTO enquiries (locale, first_name, last_name, company, email, phone, country, services, message, status, notes, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], now, now),
+            """INSERT INTO enquiries (locale, first_name, last_name, company, email, phone, country, services, message, status, notes, assignee_id, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], assignee, stamp, stamp),
         )
         con.commit()
         row = con.execute("SELECT * FROM enquiries WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -349,7 +397,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(201, {"ok": True, "id": row["id"]})
         return self.end_json(201, public_enquiry(row))
 
-    def list_enquiries(self, query):
+    def list_enquiries(self, query, actor):
         q = (query.get("q") or [""])[0].strip()
         status = (query.get("status") or [""])[0].strip()
         if status == "all":
@@ -358,47 +406,80 @@ class Handler(BaseHTTPRequestHandler):
             return self.end_json(400, {"error": "status"})
         like = "%" + q + "%"
         flag = "1" if q else ""
+        mine = actor["id"] if actor["role"] == "support" else 0
         con = connect()
         rows = con.execute(
             """SELECT * FROM enquiries
                WHERE (? = '' OR first_name LIKE ? OR last_name LIKE ? OR company LIKE ? OR email LIKE ? OR phone LIKE ? OR message LIKE ? OR country LIKE ?)
                  AND (? = '' OR status = ?)
+                 AND (? = 0 OR assignee_id = ?)
                ORDER BY id DESC""",
-            (flag, like, like, like, like, like, like, like, status, status),
+            (flag, like, like, like, like, like, like, like, status, status, mine, mine),
         ).fetchall()
         con.close()
         return self.end_json(200, {"items": [public_enquiry(row) for row in rows]})
 
-    def get_enquiry(self, item_id):
+    def get_enquiry(self, item_id, actor):
         con = connect()
         row = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
         con.close()
-        if not row:
+        if not row or not can_see_enquiry(actor, row):
             return self.end_json(404, {"error": "not_found"})
         return self.end_json(200, public_enquiry(row))
 
-    def update_enquiry(self, item_id, body):
+    def update_enquiry(self, item_id, body, actor):
         con = connect()
         current = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
-        if not current:
+        if not current or not can_see_enquiry(actor, current):
             con.close()
             return self.end_json(404, {"error": "not_found"})
-        merged = public_enquiry(current)
-        merged.update(body)
-        record = normalize(merged)
+        record = enquiry_patch(current, body, actor)
+        if record.get("error"):
+            con.close()
+            return self.end_json(400, {"error": record["error"]})
         field = missing(record)
         if field:
             con.close()
             return self.end_json(400, {"error": "required", "field": field})
-        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        if actor["role"] == "support":
+            assignee = current["assignee_id"]
+        else:
+            assignee = self.enquiry_assignee(con, body, actor, False, current["assignee_id"])
+            if assignee is False:
+                con.close()
+                return self.end_json(400, {"error": "assignee"})
         con.execute(
-            """UPDATE enquiries SET locale=?, first_name=?, last_name=?, company=?, email=?, phone=?, country=?, services=?, message=?, status=?, notes=?, updated_at=? WHERE id=?""",
-            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], now, item_id),
+            """UPDATE enquiries SET locale=?, first_name=?, last_name=?, company=?, email=?, phone=?, country=?, services=?, message=?, status=?, notes=?, assignee_id=?, updated_at=? WHERE id=?""",
+            (record["locale"], record["firstName"], record["lastName"], record["company"], record["email"], record["phone"], record["country"], record["services"], record["message"], record["status"], record["notes"], assignee, now(), item_id),
         )
         con.commit()
         row = con.execute("SELECT * FROM enquiries WHERE id = ?", (item_id,)).fetchone()
         con.close()
         return self.end_json(200, public_enquiry(row))
+
+    def list_assignees(self):
+        con = connect()
+        rows = con.execute("SELECT id, name, username, role FROM users WHERE active = 1 ORDER BY name, id").fetchall()
+        con.close()
+        return self.end_json(200, {"items": [{"id": row["id"], "name": row["name"], "username": row["username"] or "", "role": row["role"]} for row in rows]})
+
+    def enquiry_assignee(self, con, body, actor, public, current=None):
+        if public or not actor:
+            return None
+        if actor["role"] == "support":
+            return actor["id"]
+        if "assigneeId" not in body:
+            return None if current is None else current
+        if body.get("assigneeId") in (None, ""):
+            return None
+        try:
+            assignee = int(body.get("assigneeId"))
+        except (TypeError, ValueError):
+            return False
+        if not assignee:
+            return None
+        row = con.execute("SELECT id FROM users WHERE id = ? AND active = 1", (assignee,)).fetchone()
+        return assignee if row else False
 
     def delete_enquiry(self, item_id):
         con = connect()

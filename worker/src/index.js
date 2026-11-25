@@ -1,8 +1,9 @@
-const VERSION_FALLBACK = "0.1.3";
+const VERSION_FALLBACK = "0.1.4";
 const STATUSES = ["new", "in_progress", "closed"];
 const ROLES = {
-  admin: { name: "管理者", views: ["enquiries", "content", "media", "pages", "users", "menus"] },
-  editor: { name: "編輯者", views: ["enquiries", "content", "media", "pages"] }
+  admin: { name: "管理員", views: ["enquiries", "content", "media", "pages", "users", "menus"] },
+  sales: { name: "業務", views: ["enquiries"] },
+  support: { name: "客服", views: ["enquiries"] }
 };
 const VIEW_KEYS = ["", "enquiries", "content", "media", "pages", "users", "menus"];
 let schemaReady = null;
@@ -45,13 +46,18 @@ async function route(request, env) {
   if (!user.active) return json({ error: "inactive" }, 403, request);
   if (request.method === "PUT" && path === "/api/me") return updateAccount(request, env, user);
 
+  if (request.method === "GET" && path === "/api/assignees") {
+    if (!allows(user, "enquiries")) return json({ error: "forbidden" }, 403, request);
+    return listAssignees(env);
+  }
+
   if (path === "/api/enquiries" || enquiryId) {
     if (!allows(user, "enquiries")) return json({ error: "forbidden" }, 403, request);
-    if (request.method === "GET" && path === "/api/enquiries") return listEnquiries(url, env);
-    if (request.method === "POST" && path === "/api/enquiries") return createEnquiry(request, env, false);
-    if (request.method === "GET" && enquiryId) return getEnquiry(enquiryId, env);
-    if (request.method === "PUT" && enquiryId) return updateEnquiry(enquiryId, request, env);
-    if (request.method === "DELETE" && enquiryId) return deleteEnquiry(enquiryId, env);
+    if (request.method === "GET" && path === "/api/enquiries") return listEnquiries(url, env, user);
+    if (request.method === "POST" && path === "/api/enquiries") return createEnquiry(request, env, false, null, user);
+    if (request.method === "GET" && enquiryId) return getEnquiry(enquiryId, env, user);
+    if (request.method === "PUT" && enquiryId) return updateEnquiry(enquiryId, request, env, user);
+    if (request.method === "DELETE" && enquiryId) return deleteEnquiry(enquiryId, env, user);
   }
 
   if (path === "/api/users" || userId) {
@@ -87,6 +93,7 @@ async function ensureSchema(env) {
       const statements = [
         "ALTER TABLE users ADD COLUMN username TEXT",
         "ALTER TABLE users ADD COLUMN last_login_at TEXT",
+        "ALTER TABLE enquiries ADD COLUMN assignee_id INTEGER",
         `CREATE TABLE IF NOT EXISTS menus (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           parent_id INTEGER,
@@ -103,15 +110,16 @@ async function ensureSchema(env) {
       await env.DB.prepare(
         "UPDATE users SET username = lower(substr(email, 1, instr(email, '@') - 1)) WHERE username IS NULL OR username = ''"
       ).run();
+      await env.DB.prepare("UPDATE users SET role = 'sales' WHERE role = 'editor'").run();
       try {
         await env.DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS users_username ON users(username)").run();
       } catch (error) { /* existing duplicate usernames */ }
       const seeds = [
-        [1, null, "內容管理", "", 10, "admin,editor"],
-        [2, 1, "客戶詢問", "enquiries", 10, "admin,editor"],
-        [3, 1, "網站內容", "content", 20, "admin,editor"],
-        [4, 1, "媒體", "media", 30, "admin,editor"],
-        [5, 1, "動態頁面", "pages", 40, "admin,editor"],
+        [1, null, "內容管理", "", 10, "admin"],
+        [2, 1, "客戶詢問", "enquiries", 10, "admin,sales,support"],
+        [3, 1, "網站內容", "content", 20, "admin"],
+        [4, 1, "媒體", "media", 30, "admin"],
+        [5, 1, "動態頁面", "pages", 40, "admin"],
         [6, null, "系統設定", "", 20, "admin"],
         [7, 6, "使用者", "users", 10, "admin"],
         [8, 6, "選單管理", "menus", 20, "admin"]
@@ -120,6 +128,10 @@ async function ensureSchema(env) {
         await env.DB.prepare(
           "INSERT INTO menus (id, parent_id, label, view_key, sort_order, roles, active) SELECT ?, ?, ?, ?, ?, ?, 1 WHERE NOT EXISTS (SELECT 1 FROM menus WHERE id = ?)"
         ).bind(id, parentId, label, viewKey, sortOrder, roles, id).run();
+      }
+      const roleUpdates = [[1, "admin"], [2, "admin,sales,support"], [3, "admin"], [4, "admin"], [5, "admin"]];
+      for (const [id, roles] of roleUpdates) {
+        await env.DB.prepare("UPDATE menus SET roles = ? WHERE id = ?").bind(roles, id).run();
       }
     })().catch((error) => {
       schemaReady = null;
@@ -162,62 +174,100 @@ async function createPublicEnquiry(request, env) {
   return createEnquiry(request, env, true, body);
 }
 
-async function createEnquiry(request, env, isPublic, parsed) {
+async function createEnquiry(request, env, isPublic, parsed, actor) {
   const body = parsed || await readBody(request);
   const record = normalizeEnquiry(body);
   const missing = requiredMissing(record);
   if (missing) return json({ error: "required", field: missing }, 400, request);
+  const assignee = await enquiryAssignee(env, body, actor, isPublic);
+  if (assignee === false) return json({ error: "assignee" }, 400, request);
   const now = new Date().toISOString();
   const result = await env.DB.prepare(
-    `INSERT INTO enquiries (locale, first_name, last_name, company, email, phone, country, services, message, status, notes, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(record.locale, record.firstName, record.lastName, record.company, record.email, record.phone, record.country, record.services, record.message, record.status, record.notes, now, now).run();
+    `INSERT INTO enquiries (locale, first_name, last_name, company, email, phone, country, services, message, status, notes, assignee_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(record.locale, record.firstName, record.lastName, record.company, record.email, record.phone, record.country, record.services, record.message, record.status, record.notes, assignee, now, now).run();
   const id = result.meta && result.meta.last_row_id;
   const row = await env.DB.prepare("SELECT * FROM enquiries WHERE id = ?").bind(id).first();
-  return json(isPublic ? { ok: true, id } : publicEnquiry(row), isPublic ? 201 : 201, request);
+  return json(isPublic ? { ok: true, id } : publicEnquiry(row), 201, request);
 }
 
-async function listEnquiries(url, env) {
+async function listEnquiries(url, env, user) {
   const q = (url.searchParams.get("q") || "").trim();
   let status = (url.searchParams.get("status") || "").trim();
   if (status === "all") status = "";
   if (status && !STATUSES.includes(status)) return json({ error: "status" }, 400);
   const like = "%" + q + "%";
   const flag = q ? "1" : "";
+  const mine = user.role === "support" ? user.id : 0;
   const rows = await env.DB.prepare(
     `SELECT * FROM enquiries
      WHERE (? = '' OR first_name LIKE ? OR last_name LIKE ? OR company LIKE ? OR email LIKE ? OR phone LIKE ? OR message LIKE ? OR country LIKE ?)
        AND (? = '' OR status = ?)
+       AND (? = 0 OR assignee_id = ?)
      ORDER BY id DESC`
-  ).bind(flag, like, like, like, like, like, like, like, status, status).all();
+  ).bind(flag, like, like, like, like, like, like, like, status, status, mine, mine).all();
   return json({ items: (rows.results || []).map(publicEnquiry) }, 200);
 }
 
-async function getEnquiry(id, env) {
+async function getEnquiry(id, env, user) {
   const row = await env.DB.prepare("SELECT * FROM enquiries WHERE id = ?").bind(id).first();
-  if (!row) return json({ error: "not_found" }, 404);
+  if (!row || !canSeeEnquiry(user, row)) return json({ error: "not_found" }, 404);
   return json(publicEnquiry(row), 200);
 }
 
-async function updateEnquiry(id, request, env) {
+async function updateEnquiry(id, request, env, user) {
   const current = await env.DB.prepare("SELECT * FROM enquiries WHERE id = ?").bind(id).first();
-  if (!current) return json({ error: "not_found" }, 404);
+  if (!current || !canSeeEnquiry(user, current)) return json({ error: "not_found" }, 404);
   const body = await readBody(request);
-  const next = normalizeEnquiry({ ...publicEnquiry(current), ...body });
+  const next = enquiryPatch(current, body, user);
+  if (next.error) return json({ error: next.error }, 400);
   const missing = requiredMissing(next);
   if (missing) return json({ error: "required", field: missing }, 400);
+  const assignee = user.role === "support" ? current.assignee_id : await enquiryAssignee(env, body, user, false, current.assignee_id);
+  if (assignee === false) return json({ error: "assignee" }, 400);
   const now = new Date().toISOString();
   await env.DB.prepare(
-    `UPDATE enquiries SET locale=?, first_name=?, last_name=?, company=?, email=?, phone=?, country=?, services=?, message=?, status=?, notes=?, updated_at=? WHERE id=?`
-  ).bind(next.locale, next.firstName, next.lastName, next.company, next.email, next.phone, next.country, next.services, next.message, next.status, next.notes, now, id).run();
+    `UPDATE enquiries SET locale=?, first_name=?, last_name=?, company=?, email=?, phone=?, country=?, services=?, message=?, status=?, notes=?, assignee_id=?, updated_at=? WHERE id=?`
+  ).bind(next.locale, next.firstName, next.lastName, next.company, next.email, next.phone, next.country, next.services, next.message, next.status, next.notes, assignee, now, id).run();
   const row = await env.DB.prepare("SELECT * FROM enquiries WHERE id = ?").bind(id).first();
   return json(publicEnquiry(row), 200);
 }
 
-async function deleteEnquiry(id, env) {
+async function deleteEnquiry(id, env, user) {
+  if (user.role !== "admin") return json({ error: "forbidden" }, 403);
   const result = await env.DB.prepare("DELETE FROM enquiries WHERE id = ?").bind(id).run();
   if (!result.meta || result.meta.changes === 0) return json({ error: "not_found" }, 404);
   return json({ ok: true }, 200);
+}
+
+async function listAssignees(env) {
+  const rows = await env.DB.prepare("SELECT id, name, username, role FROM users WHERE active = 1 ORDER BY name, id").all();
+  return json({ items: (rows.results || []).map((row) => ({ id: row.id, name: row.name, username: row.username || "", role: row.role })) }, 200);
+}
+
+function canSeeEnquiry(user, row) {
+  return user.role !== "support" || Number(row.assignee_id) === Number(user.id);
+}
+
+function enquiryPatch(current, body, user) {
+  const base = publicEnquiry(current);
+  if (user.role === "admin") return normalizeEnquiry({ ...base, ...body });
+  if (user.role === "sales") {
+    return normalizeEnquiry({ ...base, status: body.status === undefined ? base.status : body.status, notes: body.notes === undefined ? base.notes : body.notes });
+  }
+  if (body.status !== undefined && body.status !== "in_progress") return { error: "status" };
+  return normalizeEnquiry({ ...base, notes: body.notes === undefined ? base.notes : body.notes, status: body.status === "in_progress" ? "in_progress" : base.status });
+}
+
+async function enquiryAssignee(env, body, actor, isPublic, current) {
+  if (isPublic || !actor) return null;
+  if (actor.role === "support") return actor.id;
+  if (body.assigneeId === undefined) return current === undefined ? null : current;
+  if (body.assigneeId === null || body.assigneeId === "") return null;
+  const id = Number(body.assigneeId);
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT id FROM users WHERE id = ? AND active = 1").bind(id).first();
+  return row ? id : false;
 }
 
 async function listUsers(url, env) {
@@ -301,7 +351,8 @@ function userFields(body) {
   const email = String(body.email || "").trim().toLowerCase();
   const name = String(body.name || "").trim();
   const username = String(body.username || "").trim().toLowerCase();
-  const role = ROLES[body.role] ? body.role : "editor";
+  if (!ROLES[body.role]) return { error: "role" };
+  const role = body.role;
   const active = body.active === undefined || body.active ? 1 : 0;
   if (!email.includes("@") || !name || !/^[a-z0-9._-]{2,32}$/.test(username)) return { error: "required" };
   return { email, name, username, role, active };
@@ -414,21 +465,23 @@ function publicEnquiry(row) {
     message: row.message,
     status: row.status,
     notes: row.notes,
+    assigneeId: row.assignee_id || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
 function publicUser(row) {
-  const role = ROLES[row.role] ? row.role : "editor";
+  const role = row.role;
+  const known = ROLES[role];
   return {
     id: row.id,
     email: row.email,
     username: row.username || "",
     name: row.name,
     role,
-    roleName: (ROLES[role] || {}).name || role,
-    permissions: (ROLES[role] || {}).views || [],
+    roleName: known ? known.name : role,
+    permissions: known ? known.views : [],
     active: !!row.active,
     lastLoginAt: row.last_login_at || "",
     createdAt: row.created_at
