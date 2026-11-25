@@ -36,7 +36,7 @@
 .hero-cover .eyebrow{color:#087a86}
 .hero-cover h1{color:#0a1b33}
 .hero-cover .lede{color:#3e5563}
-.hero-cover-media{object-position:center 42%}
+.hero-cover-media{object-position:center center}
 .hero-cover .hero-actions .btn-light{border-color:#0a1b33;color:#0a1b33;background:transparent}
 .hero-cover .hero-actions .btn-light:hover{background:#0a1b3312;color:#0a1b33}
 .hero-cover .hero-actions .btn-light:first-child{background:#00bfbf;border-color:#00bfbf;color:#0a1b33}
